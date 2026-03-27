@@ -1,0 +1,137 @@
+/* 
+ * Frontend styles for Giga Stock Alerts.
+ * Clean, minimal, mobile-responsive CSS.
+ */
+
+:root {
+	--giga-sa-btn-bg: #111111;
+	--giga-sa-btn-text: #ffffff;
+	--giga-sa-btn-hover: #333333;
+	--giga-sa-border: #e2e8f0;
+	--giga-sa-text: #4a5568;
+	--giga-sa-bg: #f8fafc;
+	--giga-sa-success-bg: #def7ec;
+	--giga-sa-success-text: #03543f;
+	--giga-sa-error-bg: #fde8e8;
+	--giga-sa-error-text: #9b1c1c;
+}
+
+.giga-sa-notify-wrapper {
+	margin: 1.5rem 0;
+	padding: 1.5rem;
+	background: var(--giga-sa-bg);
+	border: 1px solid var(--giga-sa-border);
+	border-radius: 6px;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+	max-width: 500px;
+}
+
+.giga-sa-heading {
+	margin-top: 0;
+	margin-bottom: 1rem;
+	font-size: 1.125rem;
+	font-weight: 600;
+	color: #1a202c;
+}
+
+.giga-sa-field-group {
+	margin-bottom: 1rem;
+	display: flex;
+	flex-direction: column;
+}
+
+.giga-sa-label {
+	font-size: 0.875rem;
+	font-weight: 500;
+	margin-bottom: 0.375rem;
+	color: var(--giga-sa-text);
+}
+
+.giga-sa-label .required {
+	color: var(--giga-sa-error-text);
+}
+
+.giga-sa-input {
+	padding: 0.625rem 0.75rem;
+	border: 1px solid var(--giga-sa-border);
+	border-radius: 4px;
+	font-size: 0.9375rem;
+	width: 100%;
+	box-sizing: border-box;
+	transition: border-color 0.2s;
+}
+
+.giga-sa-input:focus {
+	border-color: #a0aec0;
+	outline: none;
+}
+
+.giga-sa-gdpr-group {
+	margin: 1rem 0;
+}
+
+.giga-sa-gdpr-label {
+	display: flex;
+	align-items: flex-start;
+	font-size: 0.8125rem;
+	color: var(--giga-sa-text);
+	cursor: pointer;
+	line-height: 1.4;
+}
+
+.giga-sa-gdpr-label input[type="checkbox"] {
+	margin-top: 0.125rem;
+	margin-right: 0.5rem;
+	flex-shrink: 0;
+}
+
+.giga-sa-submit-btn {
+	background-color: var(--giga-sa-btn-bg) !important;
+	color: var(--giga-sa-btn-text) !important;
+	border: none;
+	padding: 0.75rem 1.25rem;
+	border-radius: 4px;
+	font-size: 0.9375rem;
+	font-weight: 600;
+	cursor: pointer;
+	width: 100%;
+	transition: background-color 0.2s;
+}
+
+.giga-sa-submit-btn:hover,
+.giga-sa-submit-btn:focus {
+	background-color: var(--giga-sa-btn-hover) !important;
+}
+
+.giga-sa-submit-btn:disabled {
+	opacity: 0.7;
+	cursor: not-allowed;
+}
+
+.giga-sa-message-success,
+.giga-sa-message-error {
+	margin-top: 1rem;
+	padding: 0.75rem 1rem;
+	border-radius: 4px;
+	font-size: 0.875rem;
+	line-height: 1.4;
+}
+
+.giga-sa-message-success {
+	background-color: var(--giga-sa-success-bg);
+	color: var(--giga-sa-success-text);
+	border: 1px solid #c8e6c9;
+}
+
+.giga-sa-message-error {
+	background-color: var(--giga-sa-error-bg);
+	color: var(--giga-sa-error-text);
+	border: 1px solid #ffcdd2;
+}
+
+/* Mobile Responsive */
+@media (max-width: 480px) {
+	.giga-sa-notify-wrapper {
+		padding: 1rem;
+	}
+}

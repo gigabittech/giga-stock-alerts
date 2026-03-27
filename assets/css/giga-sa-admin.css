@@ -1,0 +1,40 @@
+/* 
+ * Admin styles for Giga Stock Alerts.
+ * Polishing the WordPress table UI.
+ */
+
+.giga-sa-admin-wrap .wp-heading-inline {
+	margin-bottom: 15px;
+}
+
+.giga-sa-table th.column-id {
+	width: 60px;
+}
+
+.giga-sa-table th.column-status {
+	width: 120px;
+}
+
+.giga-sa-table th.column-actions {
+	width: 100px;
+	text-align: right;
+}
+
+.giga-sa-table td.column-actions {
+	text-align: right;
+}
+
+/* Badges */
+.giga-badge {
+	display: inline-block;
+	padding: 4px 10px;
+	border-radius: 12px;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1.5;
+	text-transform: uppercase;
+}
+
+.page-title-action {
+    vertical-align: middle;
+}
