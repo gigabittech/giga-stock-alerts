@@ -21,7 +21,7 @@ msgstr ""
 
 #. Plugin URI of the plugin
 #: giga-stock-alerts.php
-msgid "https://gigabit.agency/"
+msgid "https://github.com/gigabittech/giga-stock-alerts"
 msgstr ""
 
 #. Description of the plugin
@@ -31,7 +31,7 @@ msgstr ""
 
 #. Author of the plugin
 #: giga-stock-alerts.php
-msgid "Safayat Hossain"
+msgid "Gigabit"
 msgstr ""
 
 #. Author URI of the plugin

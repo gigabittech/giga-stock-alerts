@@ -1,12 +1,12 @@
 <?php
 /**
  * Plugin Name:       Giga Stock Alerts — Back in Stock Notifier for WooCommerce
- * Plugin URI:        https://gigabit.agency/
+ * Plugin URI:        https://github.com/gigabittech/giga-stock-alerts
  * Description:       Capture customer demand on out-of-stock products and notify them via email when restocked.
  * Version:           1.0.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
- * Author:            Safayat Hossain
+ * Author:            Gigabit
  * Author URI:        https://gigabit.agency/
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
