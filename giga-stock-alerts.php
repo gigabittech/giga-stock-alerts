@@ -8,7 +8,7 @@
  * Requires PHP:      7.4
  * Author:            Gigabit
  * Author URI:        https://gigabit.agency/
- * License:           GPL-2.0-or-later
+ * License:           GPLv2 or later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       giga-stock-alerts
  * Domain Path:       /languages
