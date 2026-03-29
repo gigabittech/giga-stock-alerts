@@ -26,6 +26,7 @@ add_action( 'before_woocommerce_init', function () {
 /**
  * Class Giga_SA_Core
  */
+if ( ! class_exists( 'Giga_SA_Core' ) ) {
 class Giga_SA_Core {
 
 	private static ?Giga_SA_Core $instance = null;
@@ -79,7 +80,7 @@ class Giga_SA_Core {
 		require_once GIGA_SA_PLUGIN_DIR . 'includes/class-giga-sa-widget.php';
 		
 		if ( is_admin() ) {
-			require_once GIGA_SA_PLUGIN_DIR . 'includes/class-giga-sa-admin.php';
+			require_once GIGA_SA_PLUGIN_DIR . 'admin/class-giga-sa-admin.php';
 		}
 	}
 
@@ -107,28 +108,30 @@ class Giga_SA_Core {
 		Giga_SA_DB::create_tables();
 
 		// Set default options upon first launch
-		add_option( 'giga_sa_button_heading', 'Out of Stock — Get Notified!' );
-		add_option( 'giga_sa_button_text', 'Notify Me!' );
-		add_option( 'giga_sa_success_message', "You'll be notified when this product is back!" );
-		add_option( 'giga_sa_gdpr_text', 'I agree to receive email notifications regarding this product.' );
+		add_option( 'giga_sa_button_heading', __( 'Out of Stock — Get Notified!', 'giga-stock-alerts' ) );
+		add_option( 'giga_sa_button_text', __( 'Notify Me!', 'giga-stock-alerts' ) );
+		add_option( 'giga_sa_success_message', __( 'You\'ll be notified when this product is back!', 'giga-stock-alerts' ) );
+		add_option( 'giga_sa_gdpr_text', __( 'I agree to receive email notifications regarding this product.', 'giga-stock-alerts' ) );
 		add_option( 'giga_sa_button_color', '#2271b1' );
 		add_option( 'giga_sa_double_optin', true );
-		add_option( 'giga_sa_email_subject', 'Great news! {product_name} is back in stock!' );
+		add_option( 'giga_sa_email_subject', __( 'Great news! {product_name} is back in stock!', 'giga-stock-alerts' ) );
 		add_option( 'giga_sa_batch_size', 50 );
 
 		// Legacy routine cleanup just in case
 		wp_clear_scheduled_hook( 'giga_sa_restock_check' );
-
-		flush_rewrite_rules();
 	}
 
 	public static function deactivate(): void {
 		wp_clear_scheduled_hook( 'giga_sa_process_notifications' );
 		wp_clear_scheduled_hook( 'giga_sa_retry_notification' );
-		
-		flush_rewrite_rules();
 	}
 
-	public function __clone() {}
-	public function __wakeup() {}
+	public function __clone() {
+		_doing_it_wrong( __FUNCTION__, esc_html__( 'Cheatin&#8217; huh?', 'giga-stock-alerts' ), '1.0.0' );
+	}
+
+	public function __wakeup() {
+		_doing_it_wrong( __FUNCTION__, esc_html__( 'Cheatin&#8217; huh?', 'giga-stock-alerts' ), '1.0.0' );
+	}
+}
 }

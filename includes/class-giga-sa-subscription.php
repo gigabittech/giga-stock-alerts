@@ -9,6 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+if ( ! class_exists( 'Giga_SA_Subscription' ) ) {
 class Giga_SA_Subscription {
 
 	public function __construct( Giga_SA_DB $db = null ) {
@@ -24,8 +25,8 @@ class Giga_SA_Subscription {
 	}
 
 	public function ajax_subscribe(): void {
-		if ( ! check_ajax_referer( 'giga_sa_subscribe_nonce', 'nonce', false ) ) {
-			wp_send_json_error( [ 'message' => __( 'Security check failed.', 'giga-stock-alerts' ) ], 403 );
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'giga_sa_subscribe_nonce' ) ) {
+			wp_send_json_error( [ 'code' => 'invalid_nonce', 'message' => __( 'Security check failed.', 'giga-stock-alerts' ) ] );
 		}
 
 		$email        = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
@@ -186,4 +187,5 @@ class Giga_SA_Subscription {
 		}
 		return '0.0.0.0';
 	}
+}
 }

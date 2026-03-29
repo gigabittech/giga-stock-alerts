@@ -20,6 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
+if ( ! class_exists( 'Giga_SA_DB' ) ) {
 class Giga_SA_DB {
 
 	// -----------------------------------------------------------------------
@@ -85,8 +86,11 @@ class Giga_SA_DB {
 		$alerts_table_name = $wpdb->prefix . 'giga_stock_alerts';
 		$log_table_name    = $wpdb->prefix . 'giga_stock_alerts_log';
 
+		// Table names cannot be parameterized — using direct query intentionally.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
 		$wpdb->query( "DROP TABLE IF EXISTS {$alerts_table_name}" );
+		
+		// Table names cannot be parameterized — using direct query intentionally.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
 		$wpdb->query( "DROP TABLE IF EXISTS {$log_table_name}" );
 	}
@@ -276,4 +280,5 @@ class Giga_SA_DB {
 
 		return false !== $result ? (int) $wpdb->insert_id : false;
 	}
+}
 }
