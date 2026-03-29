@@ -84,7 +84,9 @@ class Giga_SA_Email {
 		$template_path   = GIGA_SA_PLUGIN_DIR . 'templates/email-restock.php';
 		$html_content    = '';
 		if ( file_exists( $template_path ) ) {
-			$html_content = file_get_contents( $template_path );
+			ob_start();
+			include $template_path;
+			$html_content = ob_get_clean();
 			
 			// Replace variables
 			$replacements = [
