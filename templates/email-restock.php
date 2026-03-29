@@ -1,3 +1,6 @@
+<?php
+if ( ! defined( 'ABSPATH' ) ) { exit; }
+?>
 <!DOCTYPE html>
 <html>
 <head>
@@ -26,18 +29,18 @@
 					<h1>{store_name}</h1>
 				</div>
 				<div class="content">
-					<p style="font-size: 16px; text-align: left;">Hi {customer_name},</p>
-					<p style="font-size: 16px; text-align: left; margin-bottom: 30px;">Great news! The item you've been waiting for is finally back in stock. Grab it before it sells out again!</p>
+					<p style="font-size: 16px; text-align: left;"><?php echo esc_html__( 'Hi', 'giga-stock-alerts' ); ?> {customer_name},</p>
+					<p style="font-size: 16px; text-align: left; margin-bottom: 30px;"><?php echo esc_html__( 'Great news! The item you\'ve been waiting for is finally back in stock. Grab it before it sells out again!', 'giga-stock-alerts' ); ?></p>
 					
 					<img src="{product_image}" alt="{product_name}" class="product-img" />
 					<div class="product-title">{product_name}</div>
 					<div class="product-price">{product_price}</div>
 					
-					<a href="{product_url}" class="btn">Shop Now</a>
+					<a href="{product_url}" class="btn"><?php echo esc_html__( 'Shop Now', 'giga-stock-alerts' ); ?></a>
 				</div>
 				<div class="footer">
-					<p>You received this email because you subscribed to stock alerts at {store_name}.</p>
-					<p><a href="{unsubscribe_url}">Unsubscribe from this alert</a></p>
+					<p><?php echo esc_html__( 'You received this email because you subscribed to stock alerts at', 'giga-stock-alerts' ); ?> {store_name}.</p>
+					<p><a href="{unsubscribe_url}"><?php echo esc_html__( 'Unsubscribe from this alert', 'giga-stock-alerts' ); ?></a></p>
 				</div>
 			</div>
 		</td>
