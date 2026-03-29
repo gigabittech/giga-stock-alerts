@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Class Giga_SA_Widget
  */
+if ( ! class_exists( 'Giga_SA_Widget' ) ) {
 class Giga_SA_Widget {
 
 	/**
@@ -54,14 +55,14 @@ class Giga_SA_Widget {
 
 		wp_enqueue_style(
 			'giga-sa-frontend',
-			GIGA_SA_PLUGIN_URL . 'assets/css/giga-sa-frontend.css',
+			GIGA_SA_PLUGIN_URL . 'public/css/giga-sa-frontend.css',
 			[],
 			GIGA_SA_VERSION
 		);
 
 		wp_enqueue_script(
 			'giga-sa-frontend',
-			GIGA_SA_PLUGIN_URL . 'assets/js/giga-sa-frontend.js',
+			GIGA_SA_PLUGIN_URL . 'public/js/giga-sa-frontend.js',
 			[ 'jquery', 'wc-add-to-cart-variation' ],
 			GIGA_SA_VERSION,
 			true
@@ -187,4 +188,5 @@ class Giga_SA_Widget {
 
 		include $template_path;
 	}
+}
 }

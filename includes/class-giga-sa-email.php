@@ -9,6 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+if ( ! class_exists( 'Giga_SA_Email' ) ) {
 class Giga_SA_Email {
 
 	/**
@@ -127,4 +128,5 @@ class Giga_SA_Email {
 
 		return $sent;
 	}
+}
 }

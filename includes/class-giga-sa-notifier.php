@@ -9,6 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+if ( ! class_exists( 'Giga_SA_Notifier' ) ) {
 class Giga_SA_Notifier {
 
 	public function __construct() {
@@ -129,4 +130,5 @@ class Giga_SA_Notifier {
 			);
 		}
 	}
+}
 }
