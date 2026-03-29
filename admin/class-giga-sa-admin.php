@@ -16,6 +16,7 @@ if ( ! class_exists( 'WP_List_Table' ) ) {
 /**
  * Class Giga_SA_Admin
  */
+if ( ! class_exists( 'Giga_SA_Admin' ) ) {
 class Giga_SA_Admin {
 
 	public function __construct() {
@@ -45,9 +46,17 @@ class Giga_SA_Admin {
 
 		wp_enqueue_style(
 			'giga-sa-admin',
-			GIGA_SA_PLUGIN_URL . 'assets/css/giga-sa-admin.css',
+			GIGA_SA_PLUGIN_URL . 'admin/css/giga-sa-admin.css',
 			[],
 			GIGA_SA_VERSION
+		);
+
+		wp_enqueue_script(
+			'giga-sa-admin',
+			GIGA_SA_PLUGIN_URL . 'admin/js/giga-sa-admin.js',
+			[ 'jquery' ],
+			GIGA_SA_VERSION,
+			true
 		);
 	}
 
@@ -186,7 +195,7 @@ class Giga_SA_Admin {
 
 			<form id="subs-filter" method="get">
 				<!-- Keep page info active -->
-				<input type="hidden" name="page" value="<?php echo esc_attr( $_REQUEST['page'] ); ?>" />
+				<input type="hidden" name="page" value="<?php echo esc_attr( isset( $_REQUEST['page'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['page'] ) ) : 'giga-stock-alerts' ); ?>" />
 				<?php
 				$table->views();
 				$table->search_box( __( 'Search Emails', 'giga-stock-alerts' ), 'search_id' );
@@ -212,7 +221,7 @@ class Giga_SA_Admin {
 		$table_name = $wpdb->prefix . 'giga_stock_alerts';
 		
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$subscribers = $wpdb->get_results( "SELECT * FROM {$table_name} ORDER BY subscribed_at DESC", ARRAY_A );
+		$subscribers = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table_name} ORDER BY subscribed_at DESC" ), ARRAY_A );
 
 		header( 'Content-Type: text/csv; charset=utf-8' );
 		header( 'Content-Disposition: attachment; filename=giga-stock-alerts-' . gmdate( 'Y-m-d' ) . '.csv' );
@@ -222,7 +231,17 @@ class Giga_SA_Admin {
 			return;
 		}
 
-		fputcsv( $output, [ 'ID', 'Product ID', 'Variation ID', 'Email', 'Name', 'Status', 'IP Address', 'Subscribed At', 'Notified At' ] );
+		fputcsv( $output, [ 
+			__( 'ID', 'giga-stock-alerts' ), 
+			__( 'Product ID', 'giga-stock-alerts' ), 
+			__( 'Variation ID', 'giga-stock-alerts' ), 
+			__( 'Email', 'giga-stock-alerts' ), 
+			__( 'Name', 'giga-stock-alerts' ), 
+			__( 'Status', 'giga-stock-alerts' ), 
+			__( 'IP Address', 'giga-stock-alerts' ), 
+			__( 'Subscribed At', 'giga-stock-alerts' ), 
+			__( 'Notified At', 'giga-stock-alerts' ) 
+		] );
 
 		if ( ! empty( $subscribers ) ) {
 			foreach ( $subscribers as $row ) {
@@ -244,10 +263,12 @@ class Giga_SA_Admin {
 		exit;
 	}
 }
+}
 
 /**
  * Custom WP_List_Table for Subscribers.
  */
+if ( ! class_exists( 'Giga_SA_List_Table' ) ) {
 class Giga_SA_List_Table extends WP_List_Table {
 
 	public function __construct() {
@@ -276,9 +297,9 @@ class Giga_SA_List_Table extends WP_List_Table {
 		];
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$counts = $wpdb->get_results( "SELECT status, COUNT(*) as count FROM {$table} GROUP BY status", OBJECT_K );
+		$counts = $wpdb->get_results( $wpdb->prepare( "SELECT status, COUNT(*) as count FROM {$table} GROUP BY status" ), OBJECT_K );
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$total  = $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" );
+		$total  = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table}" ) );
 
 		foreach ( $statuses as $key => $label ) {
 			$count = 'all' === $key ? $total : ( isset( $counts[ $key ] ) ? $counts[ $key ]->count : 0 );
@@ -331,7 +352,7 @@ class Giga_SA_List_Table extends WP_List_Table {
 		$actions = [
 			'delete' => sprintf(
 				'<a href="?page=%s&action=%s&subscription_ids[]=%s&_wpnonce=%s">%s</a>',
-				esc_attr( $_REQUEST['page'] ),
+				esc_attr( isset( $_REQUEST['page'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['page'] ) ) : 'giga-stock-alerts' ),
 				'delete',
 				absint( $item['id'] ),
 				$delete_nonce,
@@ -406,9 +427,10 @@ class Giga_SA_List_Table extends WP_List_Table {
 				global $wpdb;
 				$table = $wpdb->prefix . 'giga_stock_alerts';
 				
-				$id_list = implode( ',', $ids );
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$wpdb->query( "DELETE FROM {$table} WHERE id IN ({$id_list})" );
+				$ids = array_map( 'intval', $ids );
+				$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+				$wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE id IN ($placeholders)", ...$ids ) );
 				
 				add_settings_error( 'giga_sa_messages', 'giga_sa_deleted', sprintf( _n( '%d subscription deleted.', '%d subscriptions deleted.', count( $ids ), 'giga-stock-alerts' ), count( $ids ) ), 'success' );
 			}
@@ -478,4 +500,5 @@ class Giga_SA_List_Table extends WP_List_Table {
 			'total_pages' => ceil( $total_items / $per_page ),
 		] );
 	}
+}
 }
