@@ -108,6 +108,45 @@ class Giga_SA_Email {
 	}
 
 	/**
+	 * Send an alert to the admin about a new confirmed subscription.
+	 */
+	public static function send_admin_alert( int $subscription_id ): bool {
+		if ( ! filter_var( get_option( 'giga_sa_admin_notify', true ), FILTER_VALIDATE_BOOLEAN ) ) {
+			return false;
+		}
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'giga_stock_alerts';
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$sub = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d LIMIT 1", $subscription_id ) );
+
+		if ( ! $sub ) {
+			return false;
+		}
+
+		$product = wc_get_product( $sub->variation_id ?: $sub->product_id );
+		if ( ! $product ) {
+			return false;
+		}
+
+		$admin_email  = get_option( 'admin_email' );
+		$product_name = $product->get_name();
+		$date         = wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $sub->subscribed_at ) );
+		$count        = Giga_SA_DB::count_subscriptions_by_product( (int) $sub->product_id );
+		$admin_url    = admin_url( 'admin.php?page=giga-stock-alerts&s=' . urlencode( $sub->email ) );
+
+		$subject = sprintf( __( 'New stock alert subscription for %s', 'giga-stock-alerts' ), $product_name );
+		$body  = "Product: {$product_name}\n";
+		$body .= "Customer Email: {$sub->email}\n";
+		$body .= "Subscribed At: {$date}\n";
+		$body .= "Total subscribers waiting for this product: {$count}\n";
+		$body .= "View all subscribers: {$admin_url}\n";
+
+		return self::dispatch( $subscription_id, $admin_email, $subject, nl2br( $body ), 'admin_alert' );
+	}
+
+	/**
 	 * Wrapper for wp_mail with WooCommerce settings.
 	 */
 	private static function dispatch( int $subscription_id, string $to, string $subject, string $message, string $channel ): bool {

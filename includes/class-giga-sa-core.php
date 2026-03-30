@@ -34,6 +34,7 @@ class Giga_SA_Core {
 	public Giga_SA_Subscription $subscription;
 	public Giga_SA_Notifier $notifier;
 	public Giga_SA_Widget $widget;
+	public Giga_SA_My_Account $my_account;
 	public ?Giga_SA_Admin $admin = null;
 
 	public static function instance(): Giga_SA_Core {
@@ -78,6 +79,7 @@ class Giga_SA_Core {
 		require_once GIGA_SA_PLUGIN_DIR . 'includes/class-giga-sa-notifier.php';
 		require_once GIGA_SA_PLUGIN_DIR . 'includes/class-giga-sa-subscription.php';
 		require_once GIGA_SA_PLUGIN_DIR . 'includes/class-giga-sa-widget.php';
+		require_once GIGA_SA_PLUGIN_DIR . 'includes/class-giga-sa-my-account.php';
 		
 		if ( is_admin() ) {
 			require_once GIGA_SA_PLUGIN_DIR . 'admin/class-giga-sa-admin.php';
@@ -88,6 +90,7 @@ class Giga_SA_Core {
 		$this->subscription = new Giga_SA_Subscription();
 		$this->notifier     = new Giga_SA_Notifier();
 		$this->widget       = new Giga_SA_Widget();
+		$this->my_account   = new Giga_SA_My_Account();
 
 		if ( is_admin() ) {
 			$this->admin = new Giga_SA_Admin();
@@ -114,11 +117,13 @@ class Giga_SA_Core {
 		add_option( 'giga_sa_gdpr_text', __( 'I agree to receive email notifications regarding this product.', 'giga-stock-alerts' ) );
 		add_option( 'giga_sa_button_color', '#2271b1' );
 		add_option( 'giga_sa_double_optin', true );
+		add_option( 'giga_sa_admin_notify', true );
 		add_option( 'giga_sa_email_subject', __( 'Great news! {product_name} is back in stock!', 'giga-stock-alerts' ) );
 		add_option( 'giga_sa_batch_size', 50 );
 
 		// Legacy routine cleanup just in case
 		wp_clear_scheduled_hook( 'giga_sa_restock_check' );
+		flush_rewrite_rules();
 	}
 
 	public static function deactivate(): void {

@@ -241,6 +241,44 @@ class Giga_SA_DB {
 		);
 	}
 
+	/**
+	 * Count waiting (confirmed) subscriptions for a given product ID.
+	 *
+	 * @param int $product_id
+	 * @return int
+	 */
+	public static function count_subscriptions_by_product( int $product_id ): int {
+		global $wpdb;
+		$table = $wpdb->prefix . 'giga_stock_alerts';
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		return (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$table} WHERE product_id = %d AND status = 'confirmed'",
+				$product_id
+			)
+		);
+	}
+
+	/**
+	 * Get active subscriptions (confirmed/notified) for a subscriber email.
+	 *
+	 * @param string $email
+	 * @return array<int, object>
+	 */
+	public static function get_subscriptions_by_email( string $email ): array {
+		global $wpdb;
+		$table = $wpdb->prefix . 'giga_stock_alerts';
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		return $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM {$table} WHERE email = %s AND status IN ('confirmed', 'notified') ORDER BY subscribed_at DESC",
+				$email
+			)
+		);
+	}
+
 	// -----------------------------------------------------------------------
 	// Logging Data Access
 	// -----------------------------------------------------------------------

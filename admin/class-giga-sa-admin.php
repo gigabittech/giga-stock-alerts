@@ -28,6 +28,10 @@ class Giga_SA_Admin {
 		add_action( 'admin_init',            [ $this, 'register_settings' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
 		add_action( 'admin_action_giga_sa_export_csv', [ $this, 'export_csv' ] );
+
+		// Feature 2: Product List Badge
+		add_filter( 'manage_edit-product_columns',        [ $this, 'add_product_columns' ], 20 );
+		add_action( 'manage_product_posts_custom_column', [ $this, 'render_product_column' ], 10, 2 );
 	}
 
 	public function enqueue_assets( $hook ): void {
@@ -118,10 +122,12 @@ class Giga_SA_Admin {
 		add_settings_section( 'giga_sa_email_section', __( 'Email Settings', 'giga-stock-alerts' ), null, 'giga-stock-alerts-settings' );
 
 		register_setting( 'giga_sa_settings_group', 'giga_sa_double_optin', [ 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => true ] );
+		register_setting( 'giga_sa_settings_group', 'giga_sa_admin_notify', [ 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => true ] );
 		register_setting( 'giga_sa_settings_group', 'giga_sa_email_subject', [ 'sanitize_callback' => 'sanitize_text_field', 'default' => 'Great news! {product_name} is back in stock!' ] );
 		register_setting( 'giga_sa_settings_group', 'giga_sa_batch_size', [ 'sanitize_callback' => 'absint', 'default' => 50 ] );
 
 		add_settings_field( 'giga_sa_double_optin', __( 'Require Double Opt-in', 'giga-stock-alerts' ), [ $this, 'render_checkbox_field' ], 'giga-stock-alerts-settings', 'giga_sa_email_section', [ 'id' => 'giga_sa_double_optin' ] );
+		add_settings_field( 'giga_sa_admin_notify', __( 'Admin Notification', 'giga-stock-alerts' ), [ $this, 'render_checkbox_field' ], 'giga-stock-alerts-settings', 'giga_sa_email_section', [ 'id' => 'giga_sa_admin_notify' ] );
 		add_settings_field( 'giga_sa_email_subject', __( 'Restock Email Subject', 'giga-stock-alerts' ), [ $this, 'render_text_field' ], 'giga-stock-alerts-settings', 'giga_sa_email_section', [ 'id' => 'giga_sa_email_subject', 'class' => 'regular-text' ] );
 		add_settings_field( 'giga_sa_batch_size', __( 'Batch Size', 'giga-stock-alerts' ), [ $this, 'render_number_field' ], 'giga-stock-alerts-settings', 'giga_sa_email_section', [ 'id' => 'giga_sa_batch_size', 'min' => 10, 'max' => 500 ] );
 	}
@@ -261,6 +267,45 @@ class Giga_SA_Admin {
 
 		fclose( $output );
 		exit;
+	}
+
+	// -----------------------------------------------------------------------
+	// Feature 2: Product List Columns
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Add "Waiting" column to WooCommerce product list.
+	 */
+	public function add_product_columns( array $columns ): array {
+		$new_columns = [];
+		foreach ( $columns as $key => $label ) {
+			$new_columns[$key] = $label;
+			if ( 'name' === $key ) {
+				$new_columns['giga_sa_waiting'] = __( 'Waiting', 'giga-stock-alerts' );
+			}
+		}
+		return $new_columns;
+	}
+
+	/**
+	 * Render the "Waiting" column content.
+	 */
+	public function render_product_column( string $column, int $post_id ): void {
+		if ( 'giga_sa_waiting' !== $column ) {
+			return;
+		}
+
+		$count = Giga_SA_DB::count_subscriptions_by_product( $post_id );
+
+		if ( $count > 0 ) {
+			printf( 
+				'<span class="giga-sa-badge">%d %s</span>', 
+				(int) $count, 
+				esc_html__( 'waiting', 'giga-stock-alerts' ) 
+			);
+		} else {
+			echo '<span class="na">&mdash;</span>';
+		}
 	}
 }
 }

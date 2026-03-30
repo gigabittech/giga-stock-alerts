@@ -22,6 +22,7 @@ class Giga_SA_Subscription {
 		add_action( 'init',                             [ $this, 'handle_confirmation' ] );
 		add_action( 'init',                             [ $this, 'handle_unsubscribe' ] );
 		add_action( 'woocommerce_order_status_completed', [ $this, 'track_purchases' ] );
+		add_action( 'wp_ajax_giga_sa_my_account_unsubscribe', [ $this, 'ajax_my_account_unsubscribe' ] );
 	}
 
 	public function ajax_subscribe(): void {
@@ -57,6 +58,7 @@ class Giga_SA_Subscription {
 					Giga_SA_Email::send_confirmation( (int) $existing->id );
 				} else {
 					Giga_SA_DB::update_subscription_status( (int) $existing->id, 'confirmed' );
+					Giga_SA_Email::send_admin_alert( (int) $existing->id );
 				}
 				wp_send_json_success( [ 'message' => __( 'Subscription processed successfully.', 'giga-stock-alerts' ) ] );
 			} else {
@@ -87,6 +89,7 @@ class Giga_SA_Subscription {
 			Giga_SA_Email::send_confirmation( (int) $insert_id );
 			$msg = __( 'Please check your email to confirm your subscription.', 'giga-stock-alerts' );
 		} else {
+			Giga_SA_Email::send_admin_alert( (int) $insert_id );
 			$msg = __( 'Great! We will notify you when this is back in stock.', 'giga-stock-alerts' );
 		}
 
@@ -103,6 +106,7 @@ class Giga_SA_Subscription {
 
 		if ( $subscription ) {
 			Giga_SA_DB::update_subscription_status( (int) $subscription->id, 'confirmed' );
+			Giga_SA_Email::send_admin_alert( (int) $subscription->id );
 			global $wpdb;
 			// Clear token
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
@@ -175,6 +179,38 @@ class Giga_SA_Subscription {
 				Giga_SA_DB::update_subscription_status( (int) $sub->id, 'purchased' );
 			}
 		}
+	}
+
+	public function ajax_my_account_unsubscribe(): void {
+		if ( ! is_user_logged_in() ) {
+			wp_send_json_error( [ 'message' => __( 'You must be logged in.', 'giga-stock-alerts' ) ] );
+		}
+
+		$sub_id = isset( $_POST['subscription_id'] ) ? absint( $_POST['subscription_id'] ) : 0;
+		$nonce  = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
+
+		if ( ! wp_verify_nonce( $nonce, 'giga_sa_unsubscribe_' . $sub_id ) ) {
+			wp_send_json_error( [ 'message' => __( 'Security check failed.', 'giga-stock-alerts' ) ] );
+		}
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'giga_stock_alerts';
+		
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$sub = $wpdb->get_row( $wpdb->prepare( "SELECT email FROM {$table} WHERE id = %d", $sub_id ) );
+
+		if ( ! $sub ) {
+			wp_send_json_error( [ 'message' => __( 'Subscription not found.', 'giga-stock-alerts' ) ] );
+		}
+
+		$current_user = wp_get_current_user();
+		if ( $current_user->user_email !== $sub->email ) {
+			wp_send_json_error( [ 'message' => __( 'Unauthorized.', 'giga-stock-alerts' ) ] );
+		}
+
+		Giga_SA_DB::update_subscription_status( $sub_id, 'unsubscribed' );
+
+		wp_send_json_success( [ 'message' => __( 'Successfully unsubscribed.', 'giga-stock-alerts' ) ] );
 	}
 
 	private function get_client_ip(): string {
