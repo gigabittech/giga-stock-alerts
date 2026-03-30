@@ -35,18 +35,24 @@ class Giga_SA_Admin {
 	}
 
 	public function enqueue_assets( $hook ): void {
-		if ( strpos( $hook, 'giga-stock-alerts' ) === false ) {
+		$screen = get_current_screen();
+		$is_product_list = ( $screen && 'edit-product' === $screen->id );
+		$is_plugin_page = ( strpos( $hook, 'giga-stock-alerts' ) !== false );
+
+		if ( ! $is_plugin_page && ! $is_product_list ) {
 			return;
 		}
 
-		wp_enqueue_style( 'wp-color-picker' );
-		wp_enqueue_script( 'wp-color-picker' );
-		
-		wp_add_inline_script( 'wp-color-picker', "
-			jQuery(document).ready(function($){
-				$('.giga-sa-color-picker').wpColorPicker();
-			});
-		" );
+		if ( $is_plugin_page ) {
+			wp_enqueue_style( 'wp-color-picker' );
+			wp_enqueue_script( 'wp-color-picker' );
+			
+			wp_add_inline_script( 'wp-color-picker', "
+				jQuery(document).ready(function($){
+					$('.giga-sa-color-picker').wpColorPicker();
+				});
+			" );
+		}
 
 		wp_enqueue_style(
 			'giga-sa-admin',

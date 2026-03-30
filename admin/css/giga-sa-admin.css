@@ -45,7 +45,14 @@
 	color: white;
 	padding: 2px 8px;
 	border-radius: 10px;
-	font-size: 12px;
+	font-size: 11px;
 	font-weight: bold;
 	white-space: nowrap;
+}
+
+/* Fix for WooCommerce product list table */
+.wp-list-table th.column-giga_sa_waiting,
+.wp-list-table td.column-giga_sa_waiting {
+	width: 100px;
+	min-width: 100px;
 }

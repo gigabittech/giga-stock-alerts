@@ -52,7 +52,16 @@ class Giga_SA_Notifier {
 		}
 
 		set_transient( $transient_key, true, 10 * MINUTE_IN_SECONDS );
-		wp_schedule_single_event( time() + 60, 'giga_sa_process_notifications', [ $product_id, $variation_id ] );
+
+		// For small subscriber lists, process immediately instead of relying on WP cron
+		$subscribers = Giga_SA_DB::get_subscribers_for_product( $product_id, $variation_id, 'confirmed' );
+		$batch_size  = (int) get_option( 'giga_sa_batch_size', 50 );
+
+		if ( count( $subscribers ) <= $batch_size ) {
+			$this->process_notifications( $product_id, $variation_id );
+		} else {
+			wp_schedule_single_event( time() + 60, 'giga_sa_process_notifications', [ $product_id, $variation_id ] );
+		}
 	}
 
 	/**
@@ -64,6 +73,11 @@ class Giga_SA_Notifier {
 		
 		// Verify product is STILL in stock - abort if went back out of stock
 		if ( ! $product || ! $product->is_in_stock() ) {
+			error_log( sprintf(
+				'[Giga Stock Alerts] Skipping notifications — product %d (variation %d) is not in stock or not found.',
+				$product_id,
+				$variation_id
+			) );
 			return;
 		}
 

@@ -102,7 +102,11 @@ class Giga_SA_Email {
 			$html_content = strtr( $html_content, $replacements );
 		}
 
-		$subject = sprintf( __( 'Great news! %s is back in stock at %s', 'giga-stock-alerts' ), $product_name, $store_name );
+		$subject_template = get_option( 'giga_sa_email_subject', __( 'Great news! {product_name} is back in stock!', 'giga-stock-alerts' ) );
+		$subject = strtr( $subject_template, [
+			'{product_name}' => $product_name,
+			'{store_name}'   => $store_name,
+		] );
 
 		return self::dispatch( $subscription_id, $sub->email, $subject, $html_content, 'restock' );
 	}
@@ -158,13 +162,32 @@ class Giga_SA_Email {
 			sprintf( 'From: %s <%s>', $from_name, $from_email ),
 		];
 
-		$sent = wp_mail( $to, $subject, $message, $headers );
+		$result = wp_mail( $to, $subject, $message, $headers );
+
+		$sent         = ( true === $result );
+		$error_message = null;
+
+		if ( is_wp_error( $result ) ) {
+			$error_message = $result->get_error_message();
+		} elseif ( ! $sent ) {
+			$error_message = 'wp_mail returned false — check server mail configuration';
+		}
+
+		if ( ! $sent ) {
+			error_log( sprintf(
+				'[Giga Stock Alerts] Email FAILED | Channel: %s | To: %s | Subject: %s | Error: %s',
+				$channel,
+				$to,
+				$subject,
+				$error_message ?? 'unknown'
+			) );
+		}
 
 		Giga_SA_DB::log_notification( [
 			'subscription_id' => $subscription_id,
 			'channel'         => $channel,
 			'status'          => $sent ? 'sent' : 'failed',
-			'error_message'   => $sent ? null : 'wp_mail returned false',
+			'error_message'   => $error_message,
 		] );
 
 		return $sent;
