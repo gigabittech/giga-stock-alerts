@@ -38,3 +38,14 @@
 .page-title-action {
     vertical-align: middle;
 }
+
+/* Feature 2: Product List Badge */
+.giga-sa-badge {
+	background: #f0a500;
+	color: white;
+	padding: 2px 8px;
+	border-radius: 10px;
+	font-size: 12px;
+	font-weight: bold;
+	white-space: nowrap;
+}

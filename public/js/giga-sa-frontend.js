@@ -135,6 +135,53 @@
 			});
 		});
 
+		// ---------------------------------------------------------------------
+		// My Account - Unsubscribe logic
+		// ---------------------------------------------------------------------
+
+		$(document).on('click', '.giga-sa-unsubscribe-btn', function(e) {
+			e.preventDefault();
+
+			var $btn   = $(this);
+			var subId  = $btn.data('id');
+			var nonce  = $btn.data('nonce');
+			
+			if ( !confirm( 'Are you sure you want to unsubscribe from this stock alert?' ) ) {
+				return;
+			}
+
+			$btn.prop('disabled', true).text('...');
+
+			$.ajax({
+				url: typeof gigaSaParams !== 'undefined' ? gigaSaParams.ajaxUrl : '/wp-admin/admin-ajax.php',
+				type: 'POST',
+				data: {
+					action: 'giga_sa_my_account_unsubscribe',
+					subscription_id: subId,
+					nonce: nonce
+				},
+				success: function(response) {
+					if ( response.success ) {
+						// Remove the row or update status
+						$btn.closest('tr').fadeOut(400, function() {
+							$(this).remove();
+							// If no rows left, refresh or show message
+							if ( $('.woocommerce-MyAccount-orders tbody tr').length === 0 ) {
+								location.reload();
+							}
+						});
+					} else {
+						alert( response.data.message || 'Error occurred.' );
+						$btn.prop('disabled', false).text('Unsubscribe');
+					}
+				},
+				error: function() {
+					alert( 'An unexpected error occurred.' );
+					$btn.prop('disabled', false).text('Unsubscribe');
+				}
+			});
+		});
+
 	});
 
 })(jQuery);
