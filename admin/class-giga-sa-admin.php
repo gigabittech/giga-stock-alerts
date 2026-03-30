@@ -28,6 +28,7 @@ class Giga_SA_Admin {
 		add_action( 'admin_init',            [ $this, 'register_settings' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
 		add_action( 'admin_action_giga_sa_export_csv', [ $this, 'export_csv' ] );
+		add_action( 'wp_ajax_giga_sa_update_subscription', [ $this, 'ajax_update_subscription' ] );
 
 		// Feature 2: Product List Badge
 		add_filter( 'manage_edit-product_columns',        [ $this, 'add_product_columns' ], 20 );
@@ -68,6 +69,11 @@ class Giga_SA_Admin {
 			GIGA_SA_VERSION,
 			true
 		);
+
+		wp_localize_script( 'giga-sa-admin', 'gigaSAAdmin', [
+			'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
+			'updateNonce' => wp_create_nonce( 'giga_sa_update_subscription' ),
+		] );
 	}
 
 	// -----------------------------------------------------------------------
@@ -109,38 +115,76 @@ class Giga_SA_Admin {
 	// -----------------------------------------------------------------------
 
 	public function register_settings(): void {
-		// Section 1: Widget
+
+		// --- Tab 1: Widget ---
 		add_settings_section( 'giga_sa_widget_section', __( 'Widget Settings', 'giga-stock-alerts' ), null, 'giga-stock-alerts-settings' );
 
-		register_setting( 'giga_sa_settings_group', 'giga_sa_button_heading', [ 'sanitize_callback' => 'sanitize_text_field', 'default' => 'Out of Stock — Get Notified!' ] );
-		register_setting( 'giga_sa_settings_group', 'giga_sa_button_text', [ 'sanitize_callback' => 'sanitize_text_field', 'default' => 'Notify Me!' ] );
-		register_setting( 'giga_sa_settings_group', 'giga_sa_success_message', [ 'sanitize_callback' => 'sanitize_text_field', 'default' => "You'll be notified when this product is back!" ] );
-		register_setting( 'giga_sa_settings_group', 'giga_sa_gdpr_text', [ 'sanitize_callback' => 'wp_kses_post', 'default' => 'I agree to receive email notifications regarding this product.' ] );
+		register_setting( 'giga_sa_settings_group', 'giga_sa_button_heading', [ 'sanitize_callback' => 'sanitize_text_field', 'default' => __( 'Out of Stock — Get Notified!', 'giga-stock-alerts' ) ] );
+		register_setting( 'giga_sa_settings_group', 'giga_sa_button_text', [ 'sanitize_callback' => 'sanitize_text_field', 'default' => __( 'Notify Me!', 'giga-stock-alerts' ) ] );
 		register_setting( 'giga_sa_settings_group', 'giga_sa_button_color', [ 'sanitize_callback' => 'sanitize_hex_color', 'default' => '#2271b1' ] );
+		register_setting( 'giga_sa_settings_group', 'giga_sa_success_message', [ 'sanitize_callback' => 'sanitize_text_field', 'default' => __( "You'll be notified when this product is back in stock!", 'giga-stock-alerts' ) ] );
+		register_setting( 'giga_sa_settings_group', 'giga_sa_gdpr_text', [ 'sanitize_callback' => 'wp_kses_post', 'default' => __( 'I agree to receive stock notifications for this product.', 'giga-stock-alerts' ) ] );
+		register_setting( 'giga_sa_settings_group', 'giga_sa_show_name_field', [ 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => true ] );
 
-		add_settings_field( 'giga_sa_button_heading', __( 'Widget Heading', 'giga-stock-alerts' ), [ $this, 'render_text_field' ], 'giga-stock-alerts-settings', 'giga_sa_widget_section', [ 'id' => 'giga_sa_button_heading' ] );
+		add_settings_field( 'giga_sa_button_heading', __( 'Form Heading', 'giga-stock-alerts' ), [ $this, 'render_text_field' ], 'giga-stock-alerts-settings', 'giga_sa_widget_section', [ 'id' => 'giga_sa_button_heading' ] );
 		add_settings_field( 'giga_sa_button_text', __( 'Button Text', 'giga-stock-alerts' ), [ $this, 'render_text_field' ], 'giga-stock-alerts-settings', 'giga_sa_widget_section', [ 'id' => 'giga_sa_button_text' ] );
-		add_settings_field( 'giga_sa_success_message', __( 'Success Message', 'giga-stock-alerts' ), [ $this, 'render_text_field' ], 'giga-stock-alerts-settings', 'giga_sa_widget_section', [ 'id' => 'giga_sa_success_message' ] );
-		add_settings_field( 'giga_sa_gdpr_text', __( 'GDPR Acceptance Text', 'giga-stock-alerts' ), [ $this, 'render_textarea_field' ], 'giga-stock-alerts-settings', 'giga_sa_widget_section', [ 'id' => 'giga_sa_gdpr_text' ] );
 		add_settings_field( 'giga_sa_button_color', __( 'Button Color', 'giga-stock-alerts' ), [ $this, 'render_color_picker' ], 'giga-stock-alerts-settings', 'giga_sa_widget_section', [ 'id' => 'giga_sa_button_color' ] );
+		add_settings_field( 'giga_sa_success_message', __( 'Success Message', 'giga-stock-alerts' ), [ $this, 'render_text_field' ], 'giga-stock-alerts-settings', 'giga_sa_widget_section', [ 'id' => 'giga_sa_success_message' ] );
+		add_settings_field( 'giga_sa_gdpr_text', __( 'GDPR Consent Text', 'giga-stock-alerts' ), [ $this, 'render_textarea_field' ], 'giga-stock-alerts-settings', 'giga_sa_widget_section', [ 'id' => 'giga_sa_gdpr_text' ] );
+		add_settings_field( 'giga_sa_show_name_field', __( 'Show Name Field', 'giga-stock-alerts' ), [ $this, 'render_checkbox_field' ], 'giga-stock-alerts-settings', 'giga_sa_widget_section', [ 'id' => 'giga_sa_show_name_field' ] );
 
-		// Section 2: Email
+		// --- Tab 2: Email ---
 		add_settings_section( 'giga_sa_email_section', __( 'Email Settings', 'giga-stock-alerts' ), null, 'giga-stock-alerts-settings' );
 
 		register_setting( 'giga_sa_settings_group', 'giga_sa_double_optin', [ 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => true ] );
+		register_setting( 'giga_sa_settings_group', 'giga_sa_email_subject', [ 'sanitize_callback' => 'sanitize_text_field', 'default' => __( 'Great news! {product_name} is back in stock!', 'giga-stock-alerts' ) ] );
+		register_setting( 'giga_sa_settings_group', 'giga_sa_email_from_name', [ 'sanitize_callback' => 'sanitize_text_field', 'default' => '' ] );
 		register_setting( 'giga_sa_settings_group', 'giga_sa_admin_notify', [ 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => true ] );
-		register_setting( 'giga_sa_settings_group', 'giga_sa_email_subject', [ 'sanitize_callback' => 'sanitize_text_field', 'default' => 'Great news! {product_name} is back in stock!' ] );
 		register_setting( 'giga_sa_settings_group', 'giga_sa_batch_size', [ 'sanitize_callback' => 'absint', 'default' => 50 ] );
 
-		add_settings_field( 'giga_sa_double_optin', __( 'Require Double Opt-in', 'giga-stock-alerts' ), [ $this, 'render_checkbox_field' ], 'giga-stock-alerts-settings', 'giga_sa_email_section', [ 'id' => 'giga_sa_double_optin' ] );
-		add_settings_field( 'giga_sa_admin_notify', __( 'Admin Notification', 'giga-stock-alerts' ), [ $this, 'render_checkbox_field' ], 'giga-stock-alerts-settings', 'giga_sa_email_section', [ 'id' => 'giga_sa_admin_notify' ] );
-		add_settings_field( 'giga_sa_email_subject', __( 'Restock Email Subject', 'giga-stock-alerts' ), [ $this, 'render_text_field' ], 'giga-stock-alerts-settings', 'giga_sa_email_section', [ 'id' => 'giga_sa_email_subject', 'class' => 'regular-text' ] );
-		add_settings_field( 'giga_sa_batch_size', __( 'Batch Size', 'giga-stock-alerts' ), [ $this, 'render_number_field' ], 'giga-stock-alerts-settings', 'giga_sa_email_section', [ 'id' => 'giga_sa_batch_size', 'min' => 10, 'max' => 500 ] );
+		add_settings_field( 'giga_sa_double_optin', __( 'Enable Double Opt-In', 'giga-stock-alerts' ), [ $this, 'render_checkbox_with_desc' ], 'giga-stock-alerts-settings', 'giga_sa_email_section', [ 'id' => 'giga_sa_double_optin', 'desc' => __( 'Subscribers must confirm their email before receiving alerts.', 'giga-stock-alerts' ) ] );
+		add_settings_field( 'giga_sa_email_subject', __( 'Email Subject', 'giga-stock-alerts' ), [ $this, 'render_text_with_desc' ], 'giga-stock-alerts-settings', 'giga_sa_email_section', [ 'id' => 'giga_sa_email_subject', 'class' => 'regular-text', 'desc' => __( 'Use {product_name} to insert the product name.', 'giga-stock-alerts' ) ] );
+		add_settings_field( 'giga_sa_email_from_name', __( 'From Name', 'giga-stock-alerts' ), [ $this, 'render_text_with_desc' ], 'giga-stock-alerts-settings', 'giga_sa_email_section', [ 'id' => 'giga_sa_email_from_name', 'class' => 'regular-text', 'desc' => __( 'Leave empty to use the WooCommerce store name.', 'giga-stock-alerts' ) ] );
+		add_settings_field( 'giga_sa_admin_notify', __( 'Admin Notification', 'giga-stock-alerts' ), [ $this, 'render_checkbox_with_desc' ], 'giga-stock-alerts-settings', 'giga_sa_email_section', [ 'id' => 'giga_sa_admin_notify', 'desc' => __( 'Email me when someone subscribes to a stock alert.', 'giga-stock-alerts' ) ] );
+		add_settings_field( 'giga_sa_batch_size', __( 'Emails Per Batch', 'giga-stock-alerts' ), [ $this, 'render_number_with_desc' ], 'giga-stock-alerts-settings', 'giga_sa_email_section', [ 'id' => 'giga_sa_batch_size', 'min' => 10, 'max' => 100, 'desc' => __( 'Max emails sent per batch when notifying subscribers.', 'giga-stock-alerts' ) ] );
+
+		// --- Tab 3: General ---
+		add_settings_section( 'giga_sa_general_section', __( 'General Settings', 'giga-stock-alerts' ), null, 'giga-stock-alerts-settings' );
+
+		register_setting( 'giga_sa_settings_group', 'giga_sa_notification_delay', [ 'sanitize_callback' => 'absint', 'default' => 1 ] );
+		register_setting( 'giga_sa_settings_group', 'giga_sa_auto_confirm_days', [ 'sanitize_callback' => 'absint', 'default' => 7 ] );
+		register_setting( 'giga_sa_settings_group', 'giga_sa_hide_outofstock', [ 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => false ] );
+
+		add_settings_field( 'giga_sa_notification_delay', __( 'Notification Delay (minutes)', 'giga-stock-alerts' ), [ $this, 'render_number_with_desc' ], 'giga-stock-alerts-settings', 'giga_sa_general_section', [ 'id' => 'giga_sa_notification_delay', 'min' => 1, 'max' => 60, 'desc' => __( 'How long to wait after restock before sending emails.', 'giga-stock-alerts' ) ] );
+		add_settings_field( 'giga_sa_auto_confirm_days', __( 'Auto-expire Pending Subscriptions (days)', 'giga-stock-alerts' ), [ $this, 'render_number_with_desc' ], 'giga-stock-alerts-settings', 'giga_sa_general_section', [ 'id' => 'giga_sa_auto_confirm_days', 'min' => 1, 'max' => 30, 'desc' => __( 'Automatically delete unconfirmed subscriptions after this many days.', 'giga-stock-alerts' ) ] );
+		add_settings_field( 'giga_sa_hide_outofstock', __( 'Hide Widget on Hidden Products', 'giga-stock-alerts' ), [ $this, 'render_checkbox_field' ], 'giga-stock-alerts-settings', 'giga_sa_general_section', [ 'id' => 'giga_sa_hide_outofstock' ] );
+
+		// --- Tab 4: Advanced ---
+		add_settings_section( 'giga_sa_advanced_section', __( 'Advanced Settings', 'giga-stock-alerts' ), null, 'giga-stock-alerts-settings' );
+
+		register_setting( 'giga_sa_settings_group', 'giga_sa_rate_limit', [ 'sanitize_callback' => 'absint', 'default' => 3 ] );
+		register_setting( 'giga_sa_settings_group', 'giga_sa_delete_data', [ 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => false ] );
+		register_setting( 'giga_sa_settings_group', 'giga_sa_debug_mode', [ 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => false ] );
+
+		add_settings_field( 'giga_sa_rate_limit', __( 'Rate Limit (per minute per IP)', 'giga-stock-alerts' ), [ $this, 'render_number_with_desc' ], 'giga-stock-alerts-settings', 'giga_sa_advanced_section', [ 'id' => 'giga_sa_rate_limit', 'min' => 1, 'max' => 10, 'desc' => __( 'Prevents spam. Recommended: 3.', 'giga-stock-alerts' ) ] );
+		add_settings_field( 'giga_sa_delete_data', __( 'Delete All Data on Uninstall', 'giga-stock-alerts' ), [ $this, 'render_checkbox_with_desc' ], 'giga-stock-alerts-settings', 'giga_sa_advanced_section', [ 'id' => 'giga_sa_delete_data', 'desc' => __( 'Warning: Permanently deletes all subscribers and logs on uninstall.', 'giga-stock-alerts' ) ] );
+		add_settings_field( 'giga_sa_debug_mode', __( 'Enable Debug Mode', 'giga-stock-alerts' ), [ $this, 'render_checkbox_with_desc' ], 'giga-stock-alerts-settings', 'giga_sa_advanced_section', [ 'id' => 'giga_sa_debug_mode', 'desc' => __( 'Logs plugin activity. Disable in production.', 'giga-stock-alerts' ) ] );
 	}
+
+	// -----------------------------------------------------------------------
+	// Field Renderers
+	// -----------------------------------------------------------------------
 
 	public function render_text_field( $args ): void {
 		$value = get_option( $args['id'] );
 		echo '<input type="text" id="' . esc_attr( $args['id'] ) . '" name="' . esc_attr( $args['id'] ) . '" value="' . esc_attr( $value ) . '" class="regular-text" />';
+	}
+
+	public function render_text_with_desc( $args ): void {
+		$this->render_text_field( $args );
+		if ( ! empty( $args['desc'] ) ) {
+			echo '<p class="description">' . esc_html( $args['desc'] ) . '</p>';
+		}
 	}
 
 	public function render_textarea_field( $args ): void {
@@ -153,9 +197,23 @@ class Giga_SA_Admin {
 		echo '<input type="checkbox" id="' . esc_attr( $args['id'] ) . '" name="' . esc_attr( $args['id'] ) . '" value="1" ' . checked( 1, $value, false ) . ' />';
 	}
 
+	public function render_checkbox_with_desc( $args ): void {
+		$this->render_checkbox_field( $args );
+		if ( ! empty( $args['desc'] ) ) {
+			echo '<p class="description">' . esc_html( $args['desc'] ) . '</p>';
+		}
+	}
+
 	public function render_number_field( $args ): void {
 		$value = get_option( $args['id'] );
 		echo '<input type="number" id="' . esc_attr( $args['id'] ) . '" name="' . esc_attr( $args['id'] ) . '" value="' . esc_attr( $value ) . '" min="' . esc_attr( $args['min'] ) . '" max="' . esc_attr( $args['max'] ) . '" class="small-text" />';
+	}
+
+	public function render_number_with_desc( $args ): void {
+		$this->render_number_field( $args );
+		if ( ! empty( $args['desc'] ) ) {
+			echo '<p class="description">' . esc_html( $args['desc'] ) . '</p>';
+		}
 	}
 
 	public function render_color_picker( $args ): void {
@@ -163,24 +221,160 @@ class Giga_SA_Admin {
 		echo '<input type="text" id="' . esc_attr( $args['id'] ) . '" name="' . esc_attr( $args['id'] ) . '" value="' . esc_attr( $value ) . '" class="giga-sa-color-picker" data-default-color="' . esc_attr( get_option( $args['id'], '#2271b1' ) ) . '" />';
 	}
 
+	// -----------------------------------------------------------------------
+	// Settings Page Renderer (Tabbed UI)
+	// -----------------------------------------------------------------------
+
 	public function render_settings_page(): void {
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
 			return;
 		}
 
-		// Handle successful save notice natively by settings API via settings_errors()
+		$tabs = [
+			'widget'   => __( 'Widget', 'giga-stock-alerts' ),
+			'email'    => __( 'Email', 'giga-stock-alerts' ),
+			'general'  => __( 'General', 'giga-stock-alerts' ),
+			'advanced' => __( 'Advanced', 'giga-stock-alerts' ),
+			'support'  => __( 'Support', 'giga-stock-alerts' ),
+		];
+
+		$tab_sections = [
+			'widget'   => 'giga_sa_widget_section',
+			'email'    => 'giga_sa_email_section',
+			'general'  => 'giga_sa_general_section',
+			'advanced' => 'giga_sa_advanced_section',
+		];
+
+		settings_errors( 'giga_sa_messages' );
 		?>
-		<div class="wrap">
-			<h1><?php esc_html_e( 'Giga Stock Alerts Settings', 'giga-stock-alerts' ); ?></h1>
+		<div class="wrap giga-sa-settings-wrap">
+			<h1><?php esc_html_e( 'Giga Stock Alerts', 'giga-stock-alerts' ); ?></h1>
+
+			<h2 class="nav-tab-wrapper giga-sa-tabs">
+				<?php foreach ( $tabs as $key => $label ) : ?>
+					<a href="#<?php echo esc_attr( $key ); ?>" class="nav-tab giga-sa-tab" data-tab="<?php echo esc_attr( $key ); ?>">
+						<?php echo esc_html( $label ); ?>
+					</a>
+				<?php endforeach; ?>
+			</h2>
+
 			<form action="options.php" method="post">
-				<?php
-				settings_fields( 'giga_sa_settings_group' );
-				do_settings_sections( 'giga-stock-alerts-settings' );
-				submit_button();
-				?>
+				<?php settings_fields( 'giga_sa_settings_group' ); ?>
+
+				<?php foreach ( $tab_sections as $key => $section_id ) : ?>
+					<div class="giga-sa-tab-panel" id="tab-<?php echo esc_attr( $key ); ?>">
+						<?php $this->render_section_fields( $section_id ); ?>
+					</div>
+				<?php endforeach; ?>
+
+				<div class="giga-sa-tab-panel" id="tab-support">
+					<?php $this->render_support_tab(); ?>
+				</div>
+
+				<?php submit_button( __( 'Save Settings', 'giga-stock-alerts' ) ); ?>
 			</form>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Render form-table fields for a specific settings section.
+	 *
+	 * @param string $section_id The settings section ID.
+	 */
+	private function render_section_fields( string $section_id ): void {
+		global $wp_settings_fields;
+
+		if ( ! isset( $wp_settings_fields['giga-stock-alerts-settings'][ $section_id ] ) ) {
+			return;
+		}
+
+		echo '<table class="form-table">';
+		foreach ( $wp_settings_fields['giga-stock-alerts-settings'][ $section_id ] as $field ) {
+			echo '<tr>';
+			if ( ! empty( $field['title'] ) ) {
+				echo '<th scope="row">' . esc_html( $field['title'] ) . '</th>';
+			}
+			echo '<td>';
+			call_user_func( $field['callback'], $field['args'] ?? [] );
+			echo '</td></tr>';
+		}
+		echo '</table>';
+	}
+
+	/**
+	 * Render the Support tab content (static, no form fields).
+	 */
+	private function render_support_tab(): void {
+		?>
+		<h2><?php esc_html_e( 'Need Help?', 'giga-stock-alerts' ); ?></h2>
+
+		<div class="giga-sa-support-cards">
+			<div class="giga-sa-support-card">
+				<span class="dashicons dashicons-sos" style="color: #d63638;"></span>
+				<h3><?php esc_html_e( 'Community Support', 'giga-stock-alerts' ); ?></h3>
+				<p><?php esc_html_e( 'Get help from the community and our team on the WordPress.org support forum.', 'giga-stock-alerts' ); ?></p>
+				<a href="https://wordpress.org/support/plugin/giga-stock-alerts/" target="_blank" rel="noopener noreferrer" class="button">
+					<?php esc_html_e( 'Open Support Forum', 'giga-stock-alerts' ); ?>
+				</a>
+			</div>
+
+			<div class="giga-sa-support-card">
+				<span class="dashicons dashicons-book" style="color: #2271b1;"></span>
+				<h3><?php esc_html_e( 'Documentation', 'giga-stock-alerts' ); ?></h3>
+				<p><?php esc_html_e( 'Read the full plugin documentation, setup guides, and FAQs.', 'giga-stock-alerts' ); ?></p>
+				<a href="https://gigabit.com.bd/docs/giga-stock-alerts/" target="_blank" rel="noopener noreferrer" class="button">
+					<?php esc_html_e( 'View Documentation', 'giga-stock-alerts' ); ?>
+				</a>
+			</div>
+		</div>
+
+		<hr />
+		<h2><?php esc_html_e( 'System Information', 'giga-stock-alerts' ); ?></h2>
+		<p class="description"><?php esc_html_e( 'Copy this information when contacting support.', 'giga-stock-alerts' ); ?></p>
+
+		<textarea class="giga-sa-sysinfo" readonly><?php echo esc_textarea( $this->get_system_info() ); ?></textarea>
+		<br />
+		<button type="button" class="button giga-sa-copy-btn">
+			<?php esc_html_e( 'Copy to Clipboard', 'giga-stock-alerts' ); ?>
+		</button>
+		<?php
+	}
+
+	/**
+	 * Build the system information string for the Support tab.
+	 *
+	 * @return string
+	 */
+	private function get_system_info(): string {
+		global $wpdb;
+
+		$wc_version = 'N/A';
+		if ( class_exists( 'WooCommerce' ) ) {
+			$wc_version = WC()->version;
+		}
+
+		$hpos_enabled = 'N/A';
+		if ( class_exists( '\Automattic\WooCommerce\Utilities\FeaturesUtil' ) ) {
+			$hpos_enabled = \Automattic\WooCommerce\Utilities\FeaturesUtil::feature_is_enabled( 'custom_order_tables' ) ? 'Yes' : 'No';
+		}
+
+		$theme = wp_get_theme();
+
+		$info  = "### Giga Stock Alerts System Info ###\n\n";
+		$info .= 'Plugin Version: ' . GIGA_SA_VERSION . "\n";
+		$info .= 'WordPress Version: ' . get_bloginfo( 'version' ) . "\n";
+		$info .= 'WooCommerce Version: ' . $wc_version . "\n";
+		$info .= 'PHP Version: ' . PHP_VERSION . "\n";
+		$info .= 'MySQL Version: ' . $wpdb->db_version() . "\n";
+		$info .= 'Active Theme: ' . $theme->get( 'Name' ) . ' ' . $theme->get( 'Version' ) . "\n";
+		$info .= 'Site URL: ' . get_site_url() . "\n";
+		$info .= 'Home URL: ' . get_home_url() . "\n";
+		$info .= 'WP Debug Mode: ' . ( defined( 'WP_DEBUG' ) && WP_DEBUG ? 'Enabled' : 'Disabled' ) . "\n";
+		$info .= 'HPOS Enabled: ' . $hpos_enabled . "\n";
+		$info .= 'Max Upload Size: ' . size_format( wp_max_upload_size() ) . "\n";
+
+		return $info;
 	}
 
 	// -----------------------------------------------------------------------
@@ -273,6 +467,76 @@ class Giga_SA_Admin {
 
 		fclose( $output );
 		exit;
+	}
+
+	// -----------------------------------------------------------------------
+	// AJAX: Inline Edit Subscription
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Handle AJAX request to update a subscription inline.
+	 */
+	public function ajax_update_subscription(): void {
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'giga_sa_update_subscription' ) ) {
+			wp_send_json_error( [ 'message' => __( 'Security check failed.', 'giga-stock-alerts' ) ] );
+		}
+
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			wp_send_json_error( [ 'message' => __( 'Unauthorized.', 'giga-stock-alerts' ) ] );
+		}
+
+		$id            = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;
+		$customer_name = isset( $_POST['customer_name'] ) ? sanitize_text_field( wp_unslash( $_POST['customer_name'] ) ) : '';
+		$email         = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
+		$status        = isset( $_POST['status'] ) ? sanitize_text_field( wp_unslash( $_POST['status'] ) ) : '';
+
+		if ( ! $id ) {
+			wp_send_json_error( [ 'message' => __( 'Invalid subscription ID.', 'giga-stock-alerts' ) ] );
+		}
+
+		if ( ! is_email( $email ) ) {
+			wp_send_json_error( [ 'message' => __( 'Invalid email address.', 'giga-stock-alerts' ) ] );
+		}
+
+		$allowed_statuses = [ 'pending', 'confirmed', 'notified', 'purchased', 'unsubscribed' ];
+		if ( ! in_array( $status, $allowed_statuses, true ) ) {
+			wp_send_json_error( [ 'message' => __( 'Invalid status value.', 'giga-stock-alerts' ) ] );
+		}
+
+		$updated = Giga_SA_DB::update_subscription( $id, [
+			'customer_name' => $customer_name,
+			'email'         => $email,
+			'status'        => $status,
+		] );
+
+		if ( ! $updated ) {
+			wp_send_json_error( [ 'message' => __( 'Failed to update subscription.', 'giga-stock-alerts' ) ] );
+		}
+
+		$status_labels = [
+			'pending'      => __( 'Pending', 'giga-stock-alerts' ),
+			'confirmed'    => __( 'Confirmed', 'giga-stock-alerts' ),
+			'notified'     => __( 'Notified', 'giga-stock-alerts' ),
+			'purchased'    => __( 'Purchased', 'giga-stock-alerts' ),
+			'unsubscribed' => __( 'Unsubscribed', 'giga-stock-alerts' ),
+		];
+
+		$status_colors = [
+			'pending'      => 'background: #e2e8f0; color: #475569;',
+			'confirmed'    => 'background: #e0f2fe; color: #0284c7;',
+			'notified'     => 'background: #ffedd5; color: #c2410c;',
+			'purchased'    => 'background: #dcfce3; color: #166534;',
+			'unsubscribed' => 'background: #fee2e2; color: #b91c1c;',
+		];
+
+		wp_send_json_success( [
+			'message'      => __( 'Subscriber updated.', 'giga-stock-alerts' ),
+			'customer_name' => $customer_name,
+			'email'         => $email,
+			'status'        => $status,
+			'status_label'  => $status_labels[ $status ] ?? ucfirst( $status ),
+			'status_style'  => $status_colors[ $status ] ?? 'background: #eee; color: #333;',
+		] );
 	}
 
 	// -----------------------------------------------------------------------
@@ -401,6 +665,11 @@ class Giga_SA_List_Table extends WP_List_Table {
 	protected function column_email( $item ): string {
 		$delete_nonce = wp_create_nonce( 'bulk-' . $this->_args['plural'] );
 		$actions = [
+			'edit' => sprintf(
+				'<a href="#" class="giga-sa-edit-btn" data-id="%d">%s</a>',
+				absint( $item['id'] ),
+				__( 'Edit', 'giga-stock-alerts' )
+			),
 			'delete' => sprintf(
 				'<a href="?page=%s&action=%s&subscription_ids[]=%s&_wpnonce=%s">%s</a>',
 				esc_attr( isset( $_REQUEST['page'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['page'] ) ) : 'giga-stock-alerts' ),
@@ -418,6 +687,27 @@ class Giga_SA_List_Table extends WP_List_Table {
 			$name,
 			$this->row_actions( $actions )
 		);
+	}
+
+	/**
+	 * Override single_row to add data attributes for inline editing.
+	 *
+	 * @param object $item The current item.
+	 */
+	public function single_row( $item ): void {
+		$alert_type = isset( $item['alert_type'] ) ? $item['alert_type'] : 'restock';
+
+		printf(
+			'<tr data-id="%d" data-name="%s" data-email="%s" data-status="%s" data-alert-type="%s">',
+			absint( $item['id'] ),
+			esc_attr( $item['customer_name'] ?? '' ),
+			esc_attr( $item['email'] ),
+			esc_attr( $item['status'] ),
+			esc_attr( $alert_type )
+		);
+
+		$this->single_row_columns( $item );
+		echo '</tr>';
 	}
 
 	protected function column_product( $item ): string {

@@ -113,13 +113,21 @@ class Giga_SA_Core {
 		// Set default options upon first launch
 		add_option( 'giga_sa_button_heading', __( 'Out of Stock — Get Notified!', 'giga-stock-alerts' ) );
 		add_option( 'giga_sa_button_text', __( 'Notify Me!', 'giga-stock-alerts' ) );
-		add_option( 'giga_sa_success_message', __( 'You\'ll be notified when this product is back!', 'giga-stock-alerts' ) );
-		add_option( 'giga_sa_gdpr_text', __( 'I agree to receive email notifications regarding this product.', 'giga-stock-alerts' ) );
+		add_option( 'giga_sa_success_message', __( "You'll be notified when this product is back!", 'giga-stock-alerts' ) );
+		add_option( 'giga_sa_gdpr_text', __( 'I agree to receive stock notifications for this product.', 'giga-stock-alerts' ) );
 		add_option( 'giga_sa_button_color', '#2271b1' );
+		add_option( 'giga_sa_show_name_field', true );
 		add_option( 'giga_sa_double_optin', true );
-		add_option( 'giga_sa_admin_notify', true );
 		add_option( 'giga_sa_email_subject', __( 'Great news! {product_name} is back in stock!', 'giga-stock-alerts' ) );
+		add_option( 'giga_sa_email_from_name', '' );
+		add_option( 'giga_sa_admin_notify', true );
 		add_option( 'giga_sa_batch_size', 50 );
+		add_option( 'giga_sa_notification_delay', 1 );
+		add_option( 'giga_sa_auto_confirm_days', 7 );
+		add_option( 'giga_sa_hide_outofstock', false );
+		add_option( 'giga_sa_rate_limit', 3 );
+		add_option( 'giga_sa_delete_data', false );
+		add_option( 'giga_sa_debug_mode', false );
 
 		// Legacy routine cleanup just in case
 		wp_clear_scheduled_hook( 'giga_sa_restock_check' );

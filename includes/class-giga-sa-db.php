@@ -223,6 +223,44 @@ class Giga_SA_DB {
 	}
 
 	/**
+	 * Update subscription fields (customer_name, email, status).
+	 *
+	 * @param int                  $id   Subscription ID.
+	 * @param array<string, mixed> $data Associative array of columns to update.
+	 * @return bool True on success, false on failure.
+	 */
+	public static function update_subscription( int $id, array $data ): bool {
+		global $wpdb;
+		$table = $wpdb->prefix . 'giga_stock_alerts';
+
+		$allowed = [ 'customer_name', 'email', 'status' ];
+		$update  = [];
+		$format  = [];
+
+		foreach ( $allowed as $field ) {
+			if ( array_key_exists( $field, $data ) ) {
+				$update[ $field ] = $data[ $field ];
+				$format[]         = '%s';
+			}
+		}
+
+		if ( empty( $update ) ) {
+			return false;
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$result = $wpdb->update(
+			$table,
+			$update,
+			[ 'id' => $id ],
+			$format,
+			[ '%d' ]
+		);
+
+		return false !== $result;
+	}
+
+	/**
 	 * Get subscription by confirmation token.
 	 *
 	 * @param string $token Confirmation token.
