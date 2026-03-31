@@ -1,207 +1,52 @@
 /*
  * Admin styles for Giga Stock Alerts.
- * Polishing the WordPress table UI.
+ * Polished, Professional, and Premium UI.
  */
 
 /* Design System - CSS Variables */
 :root {
-  --giga-primary: #6C3EF4;        /* Bold purple */
-  --giga-primary-dark: #5429D6;
-  --giga-primary-light: #EDE9FF;
-  --giga-accent: #FF6B35;         /* Orange accent */
-  --giga-success: #00C48C;        /* Green */
-  --giga-warning: #FFB800;        /* Yellow */
-  --giga-danger: #FF4757;         /* Red */
-  --giga-info: #2F86EB;           /* Blue */
-  --giga-dark: #1A1D2E;
-  --giga-text: #3D405B;
-  --giga-muted: #8892A4;
-  --giga-border: #E8EAED;
-  --giga-bg: #F5F6FA;
-  --giga-white: #FFFFFF;
-  --giga-radius: 12px;
-  --giga-radius-sm: 8px;
-  --giga-shadow: 0 4px 20px rgba(108, 62, 244, 0.08);
-  --giga-shadow-hover: 0 8px 30px rgba(108, 62, 244, 0.16);
+	--giga-primary: #6C3EF4;
+	/* Bold purple */
+	--giga-primary-dark: #5429D6;
+	--giga-primary-soft: #F4F0FF;
+	--giga-accent: #FF6633;
+	--giga-success: #10B981;
+	--giga-warning: #F59E0B;
+	--giga-danger: #EF4444;
+	--giga-info: #3B82F6;
+	--giga-dark: #0F172A;
+	--giga-text: #334155;
+	--giga-muted: #64748B;
+	--giga-border: #E2E8F0;
+	--giga-bg: #F8FAFC;
+	--giga-white: #FFFFFF;
+	--giga-radius-xl: 16px;
+	--giga-radius: 12px;
+	--giga-radius-sm: 8px;
+	--giga-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+	--giga-shadow: 0 4px 6px -1px rgba(108, 62, 244, 0.1), 0 2px 4px -1px rgba(108, 62, 244, 0.06);
+	--giga-shadow-lg: 0 20px 25px -5px rgba(108, 62, 244, 0.1), 0 10px 10px -5px rgba(108, 62, 244, 0.04);
+	--font-modern: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-.giga-sa-admin-wrap .wp-heading-inline {
-	margin-bottom: 15px;
+/* Base Wrap & Animation */
+.giga-sa-admin-wrap {
+	font-family: var(--font-modern);
+	padding: 20px 20px 20px 0;
+	animation: gigaFadeIn 0.5s ease-out;
 }
 
-.giga-sa-table th.column-id {
-	width: 60px;
+@keyframes gigaFadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
 }
-
-.giga-sa-table th.column-status {
-	width: 120px;
-}
-
-.giga-sa-table th.column-actions {
-	width: 100px;
-	text-align: right;
-}
-
-.giga-sa-table td.column-actions {
-	text-align: right;
-}
-
-/* Badges */
-.giga-badge {
-	display: inline-block;
-	padding: 4px 10px;
-	border-radius: 12px;
-	font-size: 11px;
-	font-weight: 600;
-	line-height: 1.5;
-	text-transform: uppercase;
-}
-
-.page-title-action {
-    vertical-align: middle;
-}
-
-/* Feature 2: Product List Badge */
-.giga-sa-badge {
-	background: #f0a500;
-	color: white;
-	padding: 2px 8px;
-	border-radius: 10px;
-	font-size: 11px;
-	font-weight: bold;
-	white-space: nowrap;
-}
-
-/* Fix for WooCommerce product list table */
-.wp-list-table th.column-giga_sa_waiting,
-.wp-list-table td.column-giga_sa_waiting {
-	width: 100px;
-	min-width: 100px;
-}
-
-/* -----------------------------------------------------------------------
-   Settings Page — Tabbed UI
-   ----------------------------------------------------------------------- */
-
-.giga-sa-settings-wrap {
-	max-width: 900px;
-}
-
-.giga-sa-settings-wrap .giga-sa-tabs {
-	margin-bottom: 0;
-}
-
-.giga-sa-tab-panel {
-	padding: 20px 0;
-}
-
-.giga-sa-tab-panel.hidden {
-	display: none;
-}
-
-/* Support Cards */
-.giga-sa-support-cards {
-	display: flex;
-	gap: 20px;
-	margin: 20px 0;
-}
-
-.giga-sa-support-card {
-	flex: 1;
-	padding: 24px;
-	border: 1px solid #e0e0e0;
-	border-radius: 8px;
-	background: #fff;
-	text-align: center;
-}
-
-.giga-sa-support-card .dashicons {
-	font-size: 32px;
-	width: 32px;
-	height: 32px;
-	margin-bottom: 12px;
-}
-
-.giga-sa-support-card h3 {
-	margin: 0 0 8px;
-	font-size: 16px;
-}
-
-.giga-sa-support-card p {
-	color: #666;
-	font-size: 13px;
-	margin-bottom: 16px;
-}
-
-/* System Info Textarea */
-.giga-sa-sysinfo {
-	width: 100%;
-	font-family: monospace;
-	font-size: 12px;
-	background: #f6f7f7;
-	border: 1px solid #ddd;
-	padding: 12px;
-	height: 240px;
-	resize: vertical;
-}
-
-.giga-sa-copy-btn {
-	margin-top: 8px;
-}
-
-/* -----------------------------------------------------------------------
-   Inline Edit — Subscribers Table
-   ----------------------------------------------------------------------- */
-
-.giga-sa-inline-edit-row td {
-	background: #f0f6fc;
-	padding: 12px 16px;
-	border-top: 2px solid #2271b1;
-}
-
-.giga-sa-inline-edit-row .giga-sa-edit-fields {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 16px;
-	align-items: flex-end;
-}
-
-.giga-sa-inline-edit-row label {
-	display: block;
-	font-weight: 600;
-	margin-bottom: 4px;
-	font-size: 12px;
-	color: #444;
-}
-
-.giga-sa-inline-edit-row input,
-.giga-sa-inline-edit-row select {
-	min-width: 160px;
-	padding: 4px 8px;
-}
-
-.giga-sa-inline-edit-actions {
-	margin-top: 12px;
-	display: flex;
-	gap: 8px;
-}
-
-.giga-sa-update-notice {
-	display: inline-block;
-	margin-left: 12px;
-	color: #0a7d0a;
-	font-size: 13px;
-}
-
-.giga-sa-edit-active {
-	background: #f0f6fc !important;
-	border-color: #2271b1 !important;
-	color: #2271b1 !important;
-}
-
-/* -----------------------------------------------------------------------
-   Section 1: Admin Subscribers List Page
-   ----------------------------------------------------------------------- */
 
 /* Page Header */
 .giga-sa-page-header {
@@ -209,278 +54,528 @@
 	justify-content: space-between;
 	align-items: center;
 	background: linear-gradient(135deg, var(--giga-primary) 0%, #8B5CF6 100%);
-	border-radius: var(--giga-radius);
-	padding: 24px 28px;
-	margin: 20px 0 24px;
+	border-radius: var(--giga-radius-xl);
+	padding: 32px 40px;
+	margin: 10px 0 30px;
 	color: white;
+	box-shadow: var(--giga-shadow-lg);
+	position: relative;
+	overflow: hidden;
 }
+
+.giga-sa-page-header::after {
+	content: '';
+	position: absolute;
+	top: -50px;
+	right: -50px;
+	width: 200px;
+	height: 200px;
+	background: rgba(255, 255, 255, 0.1);
+	border-radius: 50%;
+}
+
 .giga-sa-page-header h1 {
 	color: white;
-	font-size: 22px;
-	font-weight: 700;
-	margin: 0 0 4px;
+	font-size: 26px;
+	font-weight: 800;
+	margin: 0 0 6px;
+	letter-spacing: -0.5px;
 }
+
 .giga-sa-page-header p {
-	color: rgba(255,255,255,0.8);
+	color: rgba(255, 255, 255, 0.9);
 	margin: 0;
-	font-size: 14px;
+	font-size: 15px;
+	font-weight: 400;
 }
+
 .giga-sa-page-icon {
-	font-size: 36px;
-	margin-right: 16px;
-	background: rgba(255,255,255,0.2);
-	width: 60px;
-	height: 60px;
-	border-radius: 50%;
+	font-size: 32px;
+	margin-right: 24px;
+	background: rgba(255, 255, 255, 0.2);
+	width: 64px;
+	height: 64px;
+	border-radius: 18px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-}
-.giga-sa-page-header-left {
-	display: flex;
-	align-items: center;
+	box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.3);
 }
 
-/* KPI Cards Row */
-.giga-sa-stats-row {
-	display: grid;
-	grid-template-columns: repeat(4, 1fr);
-	gap: 16px;
-	margin-bottom: 24px;
-}
-.giga-sa-stat-card {
-	background: var(--giga-white);
-	border-radius: var(--giga-radius);
-	padding: 20px;
-	text-align: center;
-	box-shadow: var(--giga-shadow);
-	border-top: 4px solid transparent;
-	transition: transform 0.2s, box-shadow 0.2s;
-}
-.giga-sa-stat-card:hover {
-	transform: translateY(-2px);
-	box-shadow: var(--giga-shadow-hover);
-}
-.giga-sa-stat-total { border-top-color: var(--giga-primary); }
-.giga-sa-stat-confirmed { border-top-color: var(--giga-success); }
-.giga-sa-stat-notified { border-top-color: var(--giga-info); }
-.giga-sa-stat-purchased { border-top-color: var(--giga-accent); }
-.giga-sa-stat-icon { font-size: 28px; margin-bottom: 8px; }
-.giga-sa-stat-value {
-	font-size: 32px;
-	font-weight: 800;
-	color: var(--giga-dark);
-	line-height: 1;
-	margin-bottom: 4px;
-}
-.giga-sa-stat-label {
-	font-size: 12px;
-	color: var(--giga-muted);
-	font-weight: 600;
+.giga-sa-page-header-right .page-title-action {
+	background: white !important;
+	color: var(--giga-primary) !important;
+	border: none !important;
+	padding: 10px 20px !important;
+	border-radius: var(--giga-radius-sm) !important;
+	font-weight: 700 !important;
 	text-transform: uppercase;
+	font-size: 12px !important;
 	letter-spacing: 0.5px;
-}
-
-/* Table Styling */
-.giga-sa-subscribers-wrap .wp-list-table {
-	background: var(--giga-white);
-	border-radius: var(--giga-radius);
-	box-shadow: var(--giga-shadow);
-	border: none;
-	overflow: hidden;
-}
-.giga-sa-subscribers-wrap .wp-list-table thead th {
-	background: var(--giga-dark);
-	color: white;
-	font-weight: 600;
-	font-size: 12px;
-	text-transform: uppercase;
-	letter-spacing: 0.5px;
-	padding: 14px 16px;
-	border: none;
-}
-.giga-sa-subscribers-wrap .wp-list-table tbody tr {
-	transition: background 0.15s;
-}
-.giga-sa-subscribers-wrap .wp-list-table tbody tr:hover {
-	background: var(--giga-primary-light);
-}
-.giga-sa-subscribers-wrap .wp-list-table tbody td {
-	padding: 14px 16px;
-	border-bottom: 1px solid var(--giga-border);
-	color: var(--giga-text);
-	vertical-align: middle;
-}
-
-/* Status Badges */
-.giga-sa-badge {
-	display: inline-flex;
-	align-items: center;
-	gap: 4px;
-	padding: 4px 10px;
-	border-radius: 20px;
-	font-size: 11px;
-	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 0.5px;
-}
-.giga-sa-badge::before {
-	content: '';
-	width: 6px;
-	height: 6px;
-	border-radius: 50%;
-	background: currentColor;
-}
-.giga-sa-badge-pending   { background: #FFF3E0; color: #E65100; }
-.giga-sa-badge-confirmed { background: #E8F5E9; color: #2E7D32; }
-.giga-sa-badge-notified  { background: #E3F2FD; color: #1565C0; }
-.giga-sa-badge-purchased { background: #FFF3E0; color: #E65100; }
-.giga-sa-badge-unsubscribed { background: #FAFAFA; color: #9E9E9E; }
-
-/* Action Buttons */
-.giga-sa-btn {
-	display: inline-flex;
-	align-items: center;
-	gap: 4px;
-	padding: 5px 12px;
-	border-radius: var(--giga-radius-sm);
-	font-size: 12px;
-	font-weight: 600;
-	cursor: pointer;
-	border: none;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 	transition: all 0.2s;
-	text-decoration: none;
-}
-.giga-sa-btn-edit {
-	background: var(--giga-primary-light);
-	color: var(--giga-primary);
-}
-.giga-sa-btn-edit:hover {
-	background: var(--giga-primary);
-	color: white;
-}
-.giga-sa-btn-delete {
-	background: #FFE8E8;
-	color: var(--giga-danger);
-}
-.giga-sa-btn-delete:hover {
-	background: var(--giga-danger);
-	color: white;
 }
 
-/* -----------------------------------------------------------------------
-   Section 2: Settings Page (5 Tabs)
-   ----------------------------------------------------------------------- */
-
-/* Settings Page Header */
-.giga-sa-settings-wrap {
-	max-width: 900px;
+.giga-sa-page-header-right .page-title-action:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
 }
 
-/* Tab Navigation */
+/* Tabs Navigation */
 .giga-sa-tabs-nav {
-	display: flex;
-	gap: 4px;
-	background: var(--giga-white);
+	display: inline-flex;
+	background: #F1F5F9;
 	padding: 6px;
-	border-radius: var(--giga-radius);
-	box-shadow: var(--giga-shadow);
-	margin-bottom: 24px;
-	border: none;
-	width: fit-content;
+	border-radius: 14px;
+	margin-bottom: 25px;
+	border: 1px solid var(--giga-border);
+	gap: 4px;
 }
+
 .giga-sa-tab-btn {
-	padding: 10px 20px;
-	border-radius: var(--giga-radius-sm);
+	padding: 10px 22px;
+	border-radius: 10px;
 	border: none;
 	background: transparent;
 	color: var(--giga-muted);
-	font-weight: 600;
+	font-weight: 700;
 	font-size: 13px;
 	cursor: pointer;
-	transition: all 0.2s;
-	display: flex;
-	align-items: center;
-	gap: 6px;
-	white-space: nowrap;
-}
-.giga-sa-tab-btn:hover {
-	background: var(--giga-primary-light);
-	color: var(--giga-primary);
-}
-.giga-sa-tab-btn.active {
-	background: var(--giga-primary);
-	color: white;
-	box-shadow: 0 4px 12px rgba(108, 62, 244, 0.3);
-}
-
-/* Settings Cards */
-.giga-sa-settings-card {
-	background: var(--giga-white);
-	border-radius: var(--giga-radius);
-	box-shadow: var(--giga-shadow);
-	padding: 28px;
-	margin-bottom: 20px;
-}
-.giga-sa-settings-card h2 {
-	font-size: 16px;
-	font-weight: 700;
-	color: var(--giga-dark);
-	margin: 0 0 20px;
-	padding-bottom: 16px;
-	border-bottom: 2px solid var(--giga-primary-light);
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 	display: flex;
 	align-items: center;
 	gap: 8px;
-}
-.giga-sa-settings-card .form-table th {
-	color: var(--giga-text);
-	font-weight: 600;
-	font-size: 13px;
-	width: 220px;
-	padding: 16px 16px 16px 0;
-}
-.giga-sa-settings-card .form-table td {
-	padding: 12px 0;
-}
-.giga-sa-settings-card .description {
-	color: var(--giga-muted);
-	font-size: 12px;
-	margin-top: 4px;
-}
-.giga-sa-settings-card input[type="text"],
-.giga-sa-settings-card input[type="email"],
-.giga-sa-settings-card input[type="number"],
-.giga-sa-settings-card textarea {
-	border: 2px solid var(--giga-border);
-	border-radius: var(--giga-radius-sm);
-	padding: 8px 12px;
-	font-size: 13px;
-	transition: border-color 0.2s;
-	width: 100%;
-	max-width: 400px;
-}
-.giga-sa-settings-card input:focus,
-.giga-sa-settings-card textarea:focus {
-	border-color: var(--giga-primary);
-	outline: none;
-	box-shadow: 0 0 0 3px rgba(108, 62, 244, 0.1);
+	white-space: nowrap;
+	position: relative;
+	user-select: none;
 }
 
-/* Save Button */
-.giga-sa-save-btn {
-	background: linear-gradient(135deg, var(--giga-primary), #8B5CF6);
-	color: white;
-	border: none;
-	padding: 12px 32px;
-	border-radius: var(--giga-radius-sm);
-	font-size: 14px;
-	font-weight: 700;
-	cursor: pointer;
-	transition: all 0.2s;
-	box-shadow: 0 4px 12px rgba(108, 62, 244, 0.3);
+.giga-sa-tab-btn:hover {
+	color: var(--giga-primary);
+	background: rgba(108, 62, 244, 0.05);
 }
-.giga-sa-save-btn:hover {
+
+.giga-sa-tab-btn.active {
+	background: white;
+	color: var(--giga-primary);
+	box-shadow: 0 4px 12px rgba(108, 62, 244, 0.12), 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.giga-sa-tab-btn .dashicons {
+	font-size: 18px;
+	width: 18px;
+	height: 18px;
+	transition: transform 0.2s;
+}
+
+.giga-sa-tab-btn.active .dashicons {
+	transform: scale(1.1);
+}
+
+/* KPI Cards */
+.giga-sa-stats-row {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 20px;
+	margin-bottom: 30px;
+}
+
+.giga-sa-stat-card {
+	background: var(--giga-white);
+	border-radius: var(--giga-radius-xl);
+	padding: 24px;
+	text-align: left;
+	box-shadow: var(--giga-shadow);
+	border: 1px solid var(--giga-border);
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	display: flex;
+	flex-direction: column;
+}
+
+.giga-sa-stat-card:hover {
+	transform: translateY(-5px);
+	box-shadow: var(--giga-shadow-lg);
+	border-color: var(--giga-primary);
+}
+
+.giga-sa-stat-icon {
+	font-size: 24px;
+	margin-bottom: 16px;
+	width: 44px;
+	height: 44px;
+	background: var(--giga-primary-soft);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 12px;
+	color: var(--giga-primary);
+}
+
+.giga-sa-stat-value {
+	font-size: 36px;
+	font-weight: 900;
+	color: var(--giga-dark);
+	line-height: 1;
+	margin-bottom: 8px;
+	letter-spacing: -1px;
+}
+
+.giga-sa-stat-label {
+	font-size: 13px;
+	color: var(--giga-muted);
+	font-weight: 500;
+}
+
+/* Ultra-Minimal List Table Design */
+.giga-sa-admin-wrap .wp-list-table {
+	border: none !important;
+	background: transparent !important;
+	border-collapse: collapse !important;
+	margin-top: 5px;
+}
+
+.giga-sa-admin-wrap .wp-list-table thead th {
+	background: transparent !important;
+	border-bottom: 2px solid #F1F5F9 !important;
+	padding: 10px 10px !important;
+	color: var(--giga-muted) !important;
+	font-size: 11px !important;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	font-weight: 700 !important;
+}
+
+.giga-sa-admin-wrap .wp-list-table tbody td {
+	padding: 12px 10px !important;
+	border-bottom: 1px solid #F1F5F9 !important;
+	vertical-align: middle !important;
+	background: white;
+	transition: background 0.2s ease;
+}
+
+.giga-sa-admin-wrap .wp-list-table tbody tr:hover td {
+	background: #FAFAFF !important;
+}
+
+.giga-sa-admin-wrap .wp-list-table tr:last-child td {
+	border-bottom: none !important;
+}
+
+/* Sub-navigation (All | Confirmed | Notified) */
+.giga-sa-admin-wrap .subsubsub {
+	margin: 0 0 20px 0;
+	padding: 0;
+	list-style: none;
+	font-size: 13px;
+	display: flex;
+	gap: 15px;
+	color: var(--giga-muted);
+}
+
+.giga-sa-admin-wrap .subsubsub a {
+	text-decoration: none;
+	color: var(--giga-muted);
+	font-weight: 600;
+	transition: color 0.2s;
+	padding-bottom: 5px;
+	border-bottom: 2px solid transparent;
+}
+
+.giga-sa-admin-wrap .subsubsub a:hover,
+.giga-sa-admin-wrap .subsubsub a.current {
+	color: var(--giga-primary);
+	border-color: var(--giga-primary);
+}
+
+.giga-sa-admin-wrap .subsubsub .count {
+	font-weight: 400;
+	opacity: 0.6;
+	font-size: 11px;
+	margin-left: 3px;
+}
+
+/* Search Box Styling */
+.giga-sa-admin-wrap .search-box {
+	margin-bottom: 20px;
+	display: flex;
+	gap: 10px;
+}
+
+#search-submit {
+	background: var(--giga-primary) !important;
+	border: none !important;
+	color: white !important;
+	font-weight: 700 !important;
+	border-radius: 8px !important;
+	padding: 2px 15px !important;
+	transition: all 0.2s !important;
+}
+
+#search-submit:hover {
+	background: var(--giga-primary-dark) !important;
 	transform: translateY(-1px);
-	box-shadow: 0 6px 20px rgba(108, 62, 244, 0.4);
+}
+
+/* Table Nav (Bulk actions & Pagination) */
+.giga-sa-admin-wrap .tablenav {
+	height: auto;
+	margin: 15px 0;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.giga-sa-admin-wrap .tablenav .actions {
+	display: flex;
+	gap: 10px;
+	padding: 0;
+}
+
+.giga-sa-admin-wrap .tablenav select {
+	padding: 2px 10px !important;
+	height: 32px !important;
+}
+
+.giga-sa-admin-wrap .tablenav .button.action {
+	height: 32px !important;
+	line-height: normal !important;
+	font-weight: 600 !important;
+	border-color: var(--giga-border) !important;
+}
+
+/* Advanced Status Badges (Small) */
+.giga-sa-badge {
+	display: inline-flex !important;
+	align-items: center;
+	gap: 5px;
+	padding: 3px 10px !important;
+	border-radius: 12px !important;
+	font-size: 10px !important;
+	font-weight: 700 !important;
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+	border: 1px solid transparent !important;
+	line-height: normal !important;
+}
+
+.giga-sa-badge::before {
+	content: '';
+	width: 4px;
+	height: 4px;
+	border-radius: 50%;
+	background: currentColor;
+}
+
+/* Status: Pending (Yellow/Amber) */
+.giga-sa-badge-pending {
+	background: #FFFBEB !important;
+	color: #B45309 !important;
+	border-color: #FDE68A !important;
+}
+
+/* Status: Confirmed (Indigo/Purple) */
+.giga-sa-badge-confirmed {
+	background: #EEF2FF !important;
+	color: #4338CA !important;
+	border-color: #C7D2FE !important;
+}
+
+/* Status: Notified (Blue) */
+.giga-sa-badge-notified {
+	background: #EFF6FF !important;
+	color: #1D4ED8 !important;
+	border-color: #BFDBFE !important;
+}
+
+/* Status: Purchased (Emerald) */
+.giga-sa-badge-purchased {
+	background: #ECFDF5 !important;
+	color: #047857 !important;
+	border-color: #A7F3D0 !important;
+}
+
+/* Status: Unsubscribed (Slate) */
+.giga-sa-badge-unsubscribed {
+	background: #F8FAFC !important;
+	color: #475569 !important;
+	border-color: #E2E8F0 !important;
+}
+
+/* Status: Default/Fallback */
+.giga-sa-badge-restock {
+	background: var(--giga-primary-soft) !important;
+	color: var(--giga-primary) !important;
+}
+
+/* Action Icons Refinement */
+.giga-sa-actions {
+	display: flex;
+	gap: 16px;
+	justify-content: center;
+}
+
+.giga-sa-action-icon {
+	font-size: 18px;
+	color: var(--giga-muted);
+	transition: all 0.2s;
+	cursor: pointer;
+}
+
+.giga-sa-action-icon:hover {
+	color: var(--giga-primary);
+	transform: scale(1.2);
+}
+
+.giga-sa-delete-icon:hover {
+	color: var(--giga-danger);
+}
+
+/* Settings Card & Content */
+.giga-sa-settings-card {
+	background: white;
+	border-radius: var(--giga-radius-xl);
+	padding: 35px;
+	box-shadow: var(--giga-shadow);
+	border: 1px solid var(--giga-border);
+	margin-bottom: 25px;
+}
+
+.giga-sa-settings-card h2 {
+	font-size: 20px;
+	font-weight: 800;
+	margin: 0 0 25px;
+	padding-bottom: 15px;
+	border-bottom: 1px solid var(--giga-border);
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	color: var(--giga-dark);
+}
+
+.giga-sa-settings-card .form-table {
+	margin-top: 0;
+}
+
+.giga-sa-settings-card .form-table th {
+	font-weight: 700;
+	color: var(--giga-text);
+	font-size: 14px;
+	width: 240px;
+	padding: 20px 20px 20px 0;
+	vertical-align: top;
+}
+
+.giga-sa-settings-card .form-table td {
+	padding: 15px 0;
+}
+
+.giga-sa-settings-card .description {
+	display: block;
+	margin-top: 8px;
+	font-size: 12px;
+	color: var(--giga-muted);
+	font-style: normal;
+	line-height: 1.5;
+}
+
+/* Form Inputs Upgrade */
+.giga-sa-admin-wrap input[type="text"],
+.giga-sa-admin-wrap input[type="email"],
+.giga-sa-admin-wrap input[type="number"],
+.giga-sa-admin-wrap textarea,
+.giga-sa-admin-wrap select {
+	background: #F8FAFC !important;
+	border: 1px solid #E2E8F0 !important;
+	border-radius: 10px !important;
+	padding: 10px 15px !important;
+	font-size: 14px !important;
+	color: var(--giga-dark) !important;
+	width: 100% !important;
+	max-width: 450px !important;
+	transition: all 0.2s ease !important;
+}
+
+.giga-sa-admin-wrap input:focus,
+.giga-sa-admin-wrap select:focus,
+.giga-sa-admin-wrap textarea:focus {
+	background: white !important;
+	border-color: var(--giga-primary) !important;
+	box-shadow: 0 0 0 4px var(--giga-primary-soft) !important;
+}
+
+/* Support Tab Styling */
+.giga-sa-support-cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+	gap: 20px;
+	margin-top: 20px;
+}
+
+.giga-sa-support-card {
+	background: white;
+	border: 1px solid var(--giga-border);
+	border-radius: 16px;
+	padding: 30px;
+	text-align: center;
+	transition: all 0.3s ease;
+}
+
+.giga-sa-support-card:hover {
+	transform: translateY(-5px);
+	box-shadow: var(--giga-shadow-lg);
+	border-color: var(--giga-primary);
+}
+
+.giga-sa-support-card .dashicons {
+	font-size: 36px;
+	width: 36px;
+	height: 36px;
+	color: var(--giga-primary);
+	margin-bottom: 15px;
+	background: var(--giga-primary-soft);
+	padding: 15px;
+	border-radius: 50%;
+}
+
+.giga-sa-support-card h3 {
+	font-size: 18px;
+	font-weight: 700;
+	margin-bottom: 10px;
+	color: var(--giga-dark);
+}
+
+.giga-sa-support-card p {
+	color: var(--giga-muted);
+	font-size: 14px;
+	line-height: 1.6;
+	margin-bottom: 20px;
+}
+
+/* System Info / Console Style */
+.giga-sa-sysinfo {
+	background: #0F172A !important;
+	color: #10B981 !important;
+	font-family: 'Fira Code', 'Monaco', monospace !important;
+	font-size: 13px !important;
+	border-radius: 12px !important;
+	padding: 20px !important;
+	border: none !important;
+	box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.3) !important;
+	height: 350px !important;
+}
+
+/* Save Button Wrap */
+.giga-sa-save-wrap {
+	margin-top: 20px;
+	background: white;
+	padding: 25px 35px;
+	border-radius: 16px;
+	border: 1px solid var(--giga-border);
+	box-shadow: var(--giga-shadow);
+	display: flex;
+	justify-content: flex-end;
+}
+
+.giga-sa-save-btn {
+	margin: 0 !important;
 }

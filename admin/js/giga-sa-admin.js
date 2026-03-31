@@ -63,145 +63,109 @@
 	}
 
 	/**
-	 * Open inline edit form below the given row.
+	 * Transform the current row into an editable state.
 	 *
 	 * @param {jQuery} $row The <tr> element to edit.
 	 */
 	function openInlineEdit($row) {
-		var id = $row.data('id');
+		if ($row.hasClass('is-editing')) return;
 
-		// Toggle: if same row is already being edited, close and return.
-		// If different row is being edited, remove the old one first.
-		var $existing = $('.giga-sa-inline-edit-row');
-		if ($existing.length) {
-			var existingId = $existing.data('editing-id');
-			$existing.remove();
-			$('.giga-sa-edit-active').removeClass('giga-sa-edit-active');
-			if (existingId === id) {
-				return;
-			}
-		}
+		var id        = $row.data('id');
+		var name      = $row.data('name') || '';
+		var email     = $row.data('email') || '';
+		var status    = $row.data('status') || 'pending';
 
-		var name        = $row.data('name') || '';
-		var email       = $row.data('email') || '';
-		var status      = $row.data('status') || 'pending';
-		var alertType   = $row.data('alert-type') || 'restock';
-		var colCount    = $row.find('td').length;
+		$row.addClass('is-editing');
 
-		var statusHtml = '';
+		// 1. Email & Name Cell
+		var $emailCell = $row.find('.column-email');
+		$emailCell.data('original-html', $emailCell.html());
+		$emailCell.html(
+			'<input type="email" class="inline-edit-input inline-email" value="' + $('<div>').text(email).html() + '" style="width:100%;"><br>' +
+			'<input type="text" class="inline-edit-input inline-name" value="' + $('<div>').text(name).html() + '" placeholder="Customer Name" style="width:100%; margin-top:5px; font-size:11px;">'
+		);
+
+		// 2. Status Cell
+		var $statusCell = $row.find('.column-status');
+		$statusCell.data('original-html', $statusCell.html());
+		var statusHtml = '<select class="inline-edit-select inline-status" style="width:100%;">';
 		$.each(statusOptions, function (i, opt) {
 			statusHtml += '<option value="' + opt.value + '"' + (opt.value === status ? ' selected' : '') + '>' + opt.label + '</option>';
 		});
+		statusHtml += '</select>';
+		$statusCell.html(statusHtml);
 
-		var alertHtml = '';
-		$.each(alertTypeOptions, function (i, opt) {
-			alertHtml += '<option value="' + opt.value + '"' + (opt.value === alertType ? ' selected' : '') + '>' + opt.label + '</option>';
-		});
-
-		var html =
-			'<tr class="giga-sa-inline-edit-row" data-editing-id="' + id + '">' +
-				'<td colspan="' + colCount + '">' +
-					'<div class="giga-sa-edit-fields">' +
-						'<div>' +
-							'<label for="giga-sa-edit-name-' + id + '">Name</label>' +
-							'<input type="text" id="giga-sa-edit-name-' + id + '" class="giga-sa-edit-name" value="' + $('<div>').text(name).html() + '" />' +
-						'</div>' +
-						'<div>' +
-							'<label for="giga-sa-edit-email-' + id + '">Email</label>' +
-							'<input type="email" id="giga-sa-edit-email-' + id + '" class="giga-sa-edit-email" value="' + $('<div>').text(email).html() + '" />' +
-						'</div>' +
-						'<div>' +
-							'<label for="giga-sa-edit-status-' + id + '">Status</label>' +
-							'<select id="giga-sa-edit-status-' + id + '" class="giga-sa-edit-status">' + statusHtml + '</select>' +
-						'</div>' +
-						'<div>' +
-							'<label for="giga-sa-edit-alert-' + id + '">Alert Type</label>' +
-							'<select id="giga-sa-edit-alert-' + id + '" class="giga-sa-edit-alert">' + alertHtml + '</select>' +
-						'</div>' +
-					'</div>' +
-					'<div class="giga-sa-inline-edit-actions">' +
-						'<button type="button" class="button button-primary giga-sa-save-btn" data-id="' + id + '">Save Changes</button>' +
-						'<button type="button" class="button giga-sa-cancel-btn">Cancel</button>' +
-						'<span class="giga-sa-edit-error" style="color:#b32d2e;margin-left:8px;"></span>' +
-					'</div>' +
-				'</td>' +
-			'</tr>';
-
-		$row.after(html);
-		$row.find('.giga-sa-edit-btn').addClass('giga-sa-edit-active');
+		// 3. Actions Cell
+		var $actionsCell = $row.find('.column-actions');
+		$actionsCell.data('original-html', $actionsCell.html());
+		$actionsCell.html(
+			'<div class="giga-sa-inline-actions">' +
+				'<button type="button" class="giga-sa-save-direct" data-id="' + id + '" title="Save">✅</button>' +
+				'<button type="button" class="giga-sa-cancel-direct" title="Cancel">❌</button>' +
+			'</div>'
+		);
 	}
 
 	/**
-	 * Save the inline edit via AJAX.
+	 * Cancel editing and restore original cells.
 	 *
-	 * @param {number} subscriptionId
+	 * @param {jQuery} $row
 	 */
-	function saveInlineEdit(subscriptionId) {
-		var $editRow = $('.giga-sa-inline-edit-row');
-		var $saveBtn = $editRow.find('.giga-sa-save-btn');
-		var $error   = $editRow.find('.giga-sa-edit-error');
+	function cancelInlineEdit($row) {
+		$row.removeClass('is-editing');
+		$row.find('.column-email, .column-status, .column-actions').each(function() {
+			var original = $(this).data('original-html');
+			if (original) {
+				$(this).html(original);
+			}
+		});
+	}
 
+	/**
+	 * Save the direct inline edit via AJAX.
+	 *
+	 * @param {jQuery} $row
+	 */
+	function saveDirectEdit($row) {
+		var id = $row.data('id');
+		var $saveBtn = $row.find('.giga-sa-save-direct');
+		
 		var data = {
-			action:          'giga_sa_update_subscription',
-			nonce:           (typeof gigaSAAdmin !== 'undefined' ? gigaSAAdmin.updateNonce : ''),
-			id:              subscriptionId,
-			customer_name:   $editRow.find('.giga-sa-edit-name').val(),
-			email:           $editRow.find('.giga-sa-edit-email').val(),
-			status:          $editRow.find('.giga-sa-edit-status').val()
+			action:        'giga_sa_update_subscription',
+			nonce:         (typeof gigaSAAdmin !== 'undefined' ? gigaSAAdmin.updateNonce : ''),
+			id:            id,
+			customer_name: $row.find('.inline-name').val(),
+			email:         $row.find('.inline-email').val(),
+			status:        $row.find('.inline-status').val()
 		};
 
-		$saveBtn.prop('disabled', true).text('Saving...');
-		$error.text('');
+		$saveBtn.text('⏳').prop('disabled', true);
 
-		$.ajax({
-			url:  (typeof gigaSAAdmin !== 'undefined' ? gigaSAAdmin.ajaxUrl : '/wp-admin/admin-ajax.php'),
-			type: 'POST',
-			data: data,
-			success: function (response) {
-				$saveBtn.prop('disabled', false).text('Save Changes');
+		$.post((typeof gigaSAAdmin !== 'undefined' ? gigaSAAdmin.ajaxUrl : '/wp-admin/admin-ajax.php'), data, function(response) {
+			if (response.success) {
+				var d = response.data;
+				
+				// Update row state
+				$row.data('name', d.customer_name).attr('data-name', d.customer_name);
+				$row.data('email', d.email).attr('data-email', d.email);
+				$row.data('status', d.status).attr('data-status', d.status);
 
-				if (response.success) {
-					var d   = response.data;
-					var $row = $('tr[data-id="' + subscriptionId + '"]');
+				$row.removeClass('is-editing');
 
-					// Update the row's data attributes
-					$row.data('name', d.customer_name);
-					$row.data('email', d.email);
-					$row.data('status', d.status);
-					$row.attr('data-name', d.customer_name);
-					$row.attr('data-email', d.email);
-					$row.attr('data-status', d.status);
+				// Update static content
+				var nameHtml = d.customer_name ? '<br><small>' + $('<div>').text(d.customer_name).html() + '</small>' : '';
+				$row.find('.column-email').html('<strong>' + $('<div>').text(d.email).html() + '</strong>' + nameHtml);
+				$row.find('.column-status').html('<span class="giga-sa-badge giga-sa-badge-' + d.status + '">' + d.status_label + '</span>');
+				
+				// Restore original actions (which has the edit button)
+				$row.find('.column-actions').html($row.find('.column-actions').data('original-html'));
 
-					// Update email cell — clear and rebuild text content
-					var $emailCell = $row.find('td.column-email');
-					if ($emailCell.length) {
-						var nameHtml = d.customer_name ? '<br><small>' + $('<div>').text(d.customer_name).html() + '</small>' : '';
-						var $actions = $emailCell.find('.row-actions').detach();
-						$emailCell.html('<strong>' + $('<div>').text(d.email).html() + '</strong>' + nameHtml);
-						if ($actions.length) {
-							$emailCell.append($actions);
-						}
-					}
-
-					// Update status cell
-					var $statusCell = $row.find('td.column-status');
-					if ($statusCell.length) {
-						$statusCell.html('<span class="giga-badge" style="' + d.status_style + '">' + $('<div>').text(d.status_label).html() + '</span>');
-					}
-
-					// Show success notice
-					var $notice = $('<span class="giga-sa-update-notice"></span>').text(d.message);
-					$emailCell.find('.row-actions').after($notice);
-					setTimeout(function () { $notice.fadeOut(400, function () { $(this).remove(); }); }, 3000);
-
-					closeInlineEdit();
-				} else {
-					$error.text(response.data.message || 'An error occurred.');
-				}
-			},
-			error: function () {
-				$saveBtn.prop('disabled', false).text('Save Changes');
-				$error.text('Request failed. Please try again.');
+				// Visual feedback
+				$row.css('background', '#ECFDF5');
+				setTimeout(function() { $row.css('background', ''); }, 1000);
+			} else {
+				alert(response.data.message || 'Error saving changes.');
+				$saveBtn.text('✅').prop('disabled', false);
 			}
 		});
 	}
@@ -283,14 +247,15 @@
 		});
 
 		// --- Inline Edit: Cancel button ---
-		$(document).on('click', '.giga-sa-cancel-btn', function () {
-			closeInlineEdit();
+		$(document).on('click', '.giga-sa-cancel-direct', function (e) {
+			e.preventDefault();
+			cancelInlineEdit($(this).closest('tr'));
 		});
 
 		// --- Inline Edit: Save button ---
-		$(document).on('click', '.giga-sa-save-btn', function () {
-			var id = $(this).data('id');
-			saveInlineEdit(id);
+		$(document).on('click', '.giga-sa-save-direct', function (e) {
+			e.preventDefault();
+			saveDirectEdit($(this).closest('tr'));
 		});
 	});
 
