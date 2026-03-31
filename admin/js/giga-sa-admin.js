@@ -20,17 +20,11 @@
 			tab = 'widget';
 		}
 
-		$('.giga-sa-tab').removeClass('nav-tab-active');
-		$('.giga-sa-tab[data-tab="' + tab + '"]').addClass('nav-tab-active');
+		$('.giga-sa-tab-btn').removeClass('active');
+		$('.giga-sa-tab-btn[data-tab="' + tab + '"]').addClass('active');
 
-		$('.giga-sa-tab-panel').addClass('hidden');
-		$('#tab-' + tab).removeClass('hidden');
-
-		if (tab === 'support') {
-			$('#submit').hide();
-		} else {
-			$('#submit').show();
-		}
+		$('.giga-sa-tab-panel').hide();
+		$('#tab-' + tab).show();
 
 		try {
 			localStorage.setItem(STORAGE_KEY, tab);
@@ -235,7 +229,7 @@
 
 		activateTab(initial);
 
-		$('.giga-sa-tab').on('click', function (e) {
+		$('.giga-sa-tab-btn').on('click', function (e) {
 			e.preventDefault();
 			activateTab($(this).data('tab'));
 		});

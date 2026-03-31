@@ -231,11 +231,11 @@ class Giga_SA_Admin {
 		}
 
 		$tabs = [
-			'widget'   => __( 'Widget', 'giga-stock-alerts' ),
-			'email'    => __( 'Email', 'giga-stock-alerts' ),
-			'general'  => __( 'General', 'giga-stock-alerts' ),
-			'advanced' => __( 'Advanced', 'giga-stock-alerts' ),
-			'support'  => __( 'Support', 'giga-stock-alerts' ),
+			'widget'   => '🧩 Widget',
+			'email'    => '📧 Email',
+			'general'  => '🌐 General',
+			'advanced' => '🔧 Advanced',
+			'support'  => '💬 Support',
 		];
 
 		$tab_sections = [
@@ -248,30 +248,42 @@ class Giga_SA_Admin {
 		settings_errors( 'giga_sa_messages' );
 		?>
 		<div class="wrap giga-sa-settings-wrap">
-			<h1><?php esc_html_e( 'Giga Stock Alerts', 'giga-stock-alerts' ); ?></h1>
+			<!-- Settings Page Header -->
+			<div class="giga-sa-page-header">
+				<div class="giga-sa-page-header-left">
+					<div class="giga-sa-page-icon">⚙️</div>
+					<div>
+						<h1>Giga Stock Alerts Settings</h1>
+						<p>Configure your stock alert notifications</p>
+					</div>
+				</div>
+			</div>
 
-			<h2 class="nav-tab-wrapper giga-sa-tabs">
+			<!-- Tab Navigation -->
+			<div class="giga-sa-tabs-nav">
 				<?php foreach ( $tabs as $key => $label ) : ?>
-					<a href="#<?php echo esc_attr( $key ); ?>" class="nav-tab giga-sa-tab" data-tab="<?php echo esc_attr( $key ); ?>">
+					<button href="#<?php echo esc_attr( $key ); ?>" class="giga-sa-tab-btn <?php echo ( 'widget' === $key ) ? 'active' : ''; ?>" data-tab="<?php echo esc_attr( $key ); ?>">
 						<?php echo esc_html( $label ); ?>
-					</a>
+					</button>
 				<?php endforeach; ?>
-			</h2>
+			</div>
 
 			<form action="options.php" method="post">
 				<?php settings_fields( 'giga_sa_settings_group' ); ?>
 
 				<?php foreach ( $tab_sections as $key => $section_id ) : ?>
-					<div class="giga-sa-tab-panel" id="tab-<?php echo esc_attr( $key ); ?>">
+					<div class="giga-sa-settings-card giga-sa-tab-panel" id="tab-<?php echo esc_attr( $key ); ?>">
 						<?php $this->render_section_fields( $section_id ); ?>
 					</div>
 				<?php endforeach; ?>
 
-				<div class="giga-sa-tab-panel" id="tab-support">
+				<div class="giga-sa-settings-card giga-sa-tab-panel" id="tab-support">
 					<?php $this->render_support_tab(); ?>
 				</div>
 
-				<?php submit_button( __( 'Save Settings', 'giga-stock-alerts' ) ); ?>
+				<div style="text-align: center; margin-top: 24px;">
+					<?php submit_button( __( 'Save Settings', 'giga-stock-alerts' ), 'giga-sa-save-btn' ); ?>
+				</div>
 			</form>
 		</div>
 		<?php
@@ -390,14 +402,49 @@ class Giga_SA_Admin {
 		$table->process_bulk_action(); // Process delete logic before querying items
 		$table->prepare_items();
 
+		$stats = $this->get_subscriber_stats();
+
 		?>
 		<div class="wrap giga-sa-admin-wrap">
-			<h1 class="wp-heading-inline"><?php esc_html_e( 'Stock Alert Subscribers', 'giga-stock-alerts' ); ?></h1>
-			
-			<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?action=giga_sa_export_csv' ), 'giga_sa_export' ) ); ?>" class="page-title-action">
-				<?php esc_html_e( 'Export CSV', 'giga-stock-alerts' ); ?>
-			</a>
-			<hr class="wp-header-end">
+			<!-- Page Header -->
+			<div class="giga-sa-page-header">
+				<div class="giga-sa-page-header-left">
+					<div class="giga-sa-page-icon">🔔</div>
+					<div>
+						<h1>Stock Alert Subscribers</h1>
+						<p>Manage customers waiting for restocked products</p>
+					</div>
+				</div>
+				<div class="giga-sa-page-header-right">
+					<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?action=giga_sa_export_csv' ), 'giga_sa_export' ) ); ?>" class="page-title-action">
+						<?php esc_html_e( 'Export CSV', 'giga-stock-alerts' ); ?>
+					</a>
+				</div>
+			</div>
+
+			<!-- KPI Cards -->
+			<div class="giga-sa-stats-row">
+				<div class="giga-sa-stat-card giga-sa-stat-total">
+					<div class="giga-sa-stat-icon">👥</div>
+					<div class="giga-sa-stat-value"><?php echo esc_html( $stats['total'] ); ?></div>
+					<div class="giga-sa-stat-label">Total Subscribers</div>
+				</div>
+				<div class="giga-sa-stat-card giga-sa-stat-confirmed">
+					<div class="giga-sa-stat-icon">✅</div>
+					<div class="giga-sa-stat-value"><?php echo esc_html( $stats['confirmed'] ); ?></div>
+					<div class="giga-sa-stat-label">Confirmed</div>
+				</div>
+				<div class="giga-sa-stat-card giga-sa-stat-notified">
+					<div class="giga-sa-stat-icon">📧</div>
+					<div class="giga-sa-stat-value"><?php echo esc_html( $stats['notified'] ); ?></div>
+					<div class="giga-sa-stat-label">Notified</div>
+				</div>
+				<div class="giga-sa-stat-card giga-sa-stat-purchased">
+					<div class="giga-sa-stat-icon">🛒</div>
+					<div class="giga-sa-stat-value"><?php echo esc_html( $stats['purchased'] ); ?></div>
+					<div class="giga-sa-stat-label">Purchased</div>
+				</div>
+			</div>
 
 			<form id="subs-filter" method="get">
 				<!-- Keep page info active -->
@@ -410,6 +457,29 @@ class Giga_SA_Admin {
 			</form>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Get subscriber statistics for the KPI cards.
+	 *
+	 * @return array
+	 */
+	private function get_subscriber_stats(): array {
+		global $wpdb;
+		$table_name = $wpdb->prefix . 'giga_stock_alerts';
+		
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$counts = $wpdb->get_results( $wpdb->prepare( "SELECT status, COUNT(*) as count FROM {$table_name} GROUP BY status" ), OBJECT_K );
+		
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$total = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table_name}" ) );
+		
+		return [
+			'total'     => (int) $total,
+			'confirmed' => isset( $counts['confirmed'] ) ? (int) $counts['confirmed']->count : 0,
+			'notified'  => isset( $counts['notified'] ) ? (int) $counts['notified']->count : 0,
+			'purchased' => isset( $counts['purchased'] ) ? (int) $counts['purchased']->count : 0,
+		];
 	}
 
 	// -----------------------------------------------------------------------
@@ -728,22 +798,10 @@ class Giga_SA_List_Table extends WP_List_Table {
 	}
 
 	protected function column_status( $item ): string {
-		// Colors: pending=grey, confirmed=blue, notified=orange, purchased=green, unsubscribed=red
-		$colors = [
-			'pending'      => 'background: #e2e8f0; color: #475569;',
-			'confirmed'    => 'background: #e0f2fe; color: #0284c7;',
-			'notified'     => 'background: #ffedd5; color: #c2410c;',
-			'purchased'    => 'background: #dcfce3; color: #166534;',
-			'unsubscribed' => 'background: #fee2e2; color: #b91c1c;',
-		];
-
-		$style  = $colors[ $item['status'] ] ?? 'background: #eee; color: #333;';
-		$status = ucfirst( $item['status'] );
-
 		return sprintf(
-			'<span class="giga-badge" style="%s">%s</span>',
-			esc_attr( $style ),
-			esc_html( $status )
+			'<span class="giga-sa-badge giga-sa-badge-%s">%s</span>',
+			esc_attr( $item['status'] ),
+			esc_html( ucfirst( $item['status'] ) )
 		);
 	}
 

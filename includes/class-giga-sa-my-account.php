@@ -55,51 +55,54 @@ class Giga_SA_My_Account {
 		$subscriptions = Giga_SA_DB::get_subscriptions_by_email( $current_user->user_email );
 
 		?>
-		<h2><?php esc_html_e( 'Your Stock Alert Subscriptions', 'giga-stock-alerts' ); ?></h2>
+		<!-- Page Header -->
+		<div class="giga-sa-account-header">
+			<div class="giga-sa-account-header-icon">🔔</div>
+			<div>
+				<h2>Your Stock Alerts</h2>
+				p>Manage your product notifications</p>
+			</div>
+		</div>
 
 		<?php if ( empty( $subscriptions ) ) : ?>
-			<p><?php esc_html_e( 'You have no active stock alert subscriptions.', 'giga-stock-alerts' ); ?></p>
+			<!-- Empty State -->
+			<div class="giga-sa-empty-state">
+				<div class="giga-sa-empty-state-icon">🔔</div>
+				<h3>No active stock alerts</h3>
+				<p>Browse products and click 'Notify Me' on out-of-stock items.</p>
+			</div>
 		<?php else : ?>
-			<table class="woocommerce-orders-table woocommerce-MyAccount-orders shop_table shop_table_responsive my_account_orders">
-				<thead>
-					<tr>
-						<th><?php esc_html_e( 'Product', 'giga-stock-alerts' ); ?></th>
-						<th><?php esc_html_e( 'Status', 'giga-stock-alerts' ); ?></th>
-						<th><?php esc_html_e( 'Subscribed On', 'giga-stock-alerts' ); ?></th>
-						<th><?php esc_html_e( 'Action', 'giga-stock-alerts' ); ?></th>
-					</tr>
-				</thead>
-				<tbody>
-					<?php foreach ( $subscriptions as $sub ) : 
-						$target_id = $sub->variation_id ?: $sub->product_id;
-						$product   = wc_get_product( $target_id );
-						if ( ! $product ) continue;
-						?>
-						<tr>
-							<td>
-								<a href="<?php echo esc_url( $product->get_permalink() ); ?>">
-									<?php echo esc_html( $product->get_name() ); ?>
-								</a>
-							</td>
-							<td>
-								<span class="giga-badge status-<?php echo esc_attr( $sub->status ); ?>">
-									<?php echo esc_html( ucfirst( $sub->status ) ); ?>
-								</span>
-							</td>
-							<td>
-								<?php echo esc_html( wp_date( get_option( 'date_format' ), strtotime( $sub->subscribed_at ) ) ); ?>
-							</td>
-							<td>
-								<button class="button giga-sa-unsubscribe-btn" 
-										data-id="<?php echo absint( $sub->id ); ?>" 
-										data-nonce="<?php echo esc_attr( wp_create_nonce( 'giga_sa_unsubscribe_' . $sub->id ) ); ?>">
-									<?php esc_html_e( 'Unsubscribe', 'giga-stock-alerts' ); ?>
-								</button>
-							</td>
-						</tr>
-					<?php endforeach; ?>
-				</tbody>
-			</table>
+			<!-- Subscription Cards -->
+			<div class="giga-sa-subscription-list">
+				<?php foreach ( $subscriptions as $sub ) :
+					$target_id = $sub->variation_id ?: $sub->product_id;
+					$product   = wc_get_product( $target_id );
+					if ( ! $product ) continue;
+					$product_image = $product->get_image('thumbnail');
+					?>
+					<div class="giga-sa-subscription-card">
+						<div class="giga-sa-subscription-card-left">
+							<div class="giga-sa-product-thumb-placeholder">
+								<?php echo $product_image; ?>
+							</div>
+							<div class="giga-sa-product-info">
+								<h4><?php echo esc_html( $product->get_name() ); ?></h4>
+								<span><?php echo esc_html( wp_date( get_option( 'date_format' ), strtotime( $sub->subscribed_at ) ) ); ?></span>
+							</div>
+						</div>
+						<div class="giga-sa-subscription-card-right">
+							<span class="giga-sa-badge giga-sa-badge-<?php echo esc_attr( $sub->status ); ?>">
+								<?php echo esc_html( ucfirst( $sub->status ) ); ?>
+							</span>
+							<button class="giga-sa-unsub-btn"
+									data-id="<?php echo absint( $sub->id ); ?>"
+									data-nonce="<?php echo esc_attr( wp_create_nonce( 'giga_sa_unsubscribe_' . $sub->id ) ); ?>">
+								Unsubscribe
+							</button>
+						</div>
+					</div>
+				<?php endforeach; ?>
+			</div>
 		<?php endif;
 	}
 }

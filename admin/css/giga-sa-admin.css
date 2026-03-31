@@ -1,7 +1,29 @@
-/* 
+/*
  * Admin styles for Giga Stock Alerts.
  * Polishing the WordPress table UI.
  */
+
+/* Design System - CSS Variables */
+:root {
+  --giga-primary: #6C3EF4;        /* Bold purple */
+  --giga-primary-dark: #5429D6;
+  --giga-primary-light: #EDE9FF;
+  --giga-accent: #FF6B35;         /* Orange accent */
+  --giga-success: #00C48C;        /* Green */
+  --giga-warning: #FFB800;        /* Yellow */
+  --giga-danger: #FF4757;         /* Red */
+  --giga-info: #2F86EB;           /* Blue */
+  --giga-dark: #1A1D2E;
+  --giga-text: #3D405B;
+  --giga-muted: #8892A4;
+  --giga-border: #E8EAED;
+  --giga-bg: #F5F6FA;
+  --giga-white: #FFFFFF;
+  --giga-radius: 12px;
+  --giga-radius-sm: 8px;
+  --giga-shadow: 0 4px 20px rgba(108, 62, 244, 0.08);
+  --giga-shadow-hover: 0 8px 30px rgba(108, 62, 244, 0.16);
+}
 
 .giga-sa-admin-wrap .wp-heading-inline {
 	margin-bottom: 15px;
@@ -175,4 +197,290 @@
 	background: #f0f6fc !important;
 	border-color: #2271b1 !important;
 	color: #2271b1 !important;
+}
+
+/* -----------------------------------------------------------------------
+   Section 1: Admin Subscribers List Page
+   ----------------------------------------------------------------------- */
+
+/* Page Header */
+.giga-sa-page-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	background: linear-gradient(135deg, var(--giga-primary) 0%, #8B5CF6 100%);
+	border-radius: var(--giga-radius);
+	padding: 24px 28px;
+	margin: 20px 0 24px;
+	color: white;
+}
+.giga-sa-page-header h1 {
+	color: white;
+	font-size: 22px;
+	font-weight: 700;
+	margin: 0 0 4px;
+}
+.giga-sa-page-header p {
+	color: rgba(255,255,255,0.8);
+	margin: 0;
+	font-size: 14px;
+}
+.giga-sa-page-icon {
+	font-size: 36px;
+	margin-right: 16px;
+	background: rgba(255,255,255,0.2);
+	width: 60px;
+	height: 60px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.giga-sa-page-header-left {
+	display: flex;
+	align-items: center;
+}
+
+/* KPI Cards Row */
+.giga-sa-stats-row {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 16px;
+	margin-bottom: 24px;
+}
+.giga-sa-stat-card {
+	background: var(--giga-white);
+	border-radius: var(--giga-radius);
+	padding: 20px;
+	text-align: center;
+	box-shadow: var(--giga-shadow);
+	border-top: 4px solid transparent;
+	transition: transform 0.2s, box-shadow 0.2s;
+}
+.giga-sa-stat-card:hover {
+	transform: translateY(-2px);
+	box-shadow: var(--giga-shadow-hover);
+}
+.giga-sa-stat-total { border-top-color: var(--giga-primary); }
+.giga-sa-stat-confirmed { border-top-color: var(--giga-success); }
+.giga-sa-stat-notified { border-top-color: var(--giga-info); }
+.giga-sa-stat-purchased { border-top-color: var(--giga-accent); }
+.giga-sa-stat-icon { font-size: 28px; margin-bottom: 8px; }
+.giga-sa-stat-value {
+	font-size: 32px;
+	font-weight: 800;
+	color: var(--giga-dark);
+	line-height: 1;
+	margin-bottom: 4px;
+}
+.giga-sa-stat-label {
+	font-size: 12px;
+	color: var(--giga-muted);
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+/* Table Styling */
+.giga-sa-subscribers-wrap .wp-list-table {
+	background: var(--giga-white);
+	border-radius: var(--giga-radius);
+	box-shadow: var(--giga-shadow);
+	border: none;
+	overflow: hidden;
+}
+.giga-sa-subscribers-wrap .wp-list-table thead th {
+	background: var(--giga-dark);
+	color: white;
+	font-weight: 600;
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	padding: 14px 16px;
+	border: none;
+}
+.giga-sa-subscribers-wrap .wp-list-table tbody tr {
+	transition: background 0.15s;
+}
+.giga-sa-subscribers-wrap .wp-list-table tbody tr:hover {
+	background: var(--giga-primary-light);
+}
+.giga-sa-subscribers-wrap .wp-list-table tbody td {
+	padding: 14px 16px;
+	border-bottom: 1px solid var(--giga-border);
+	color: var(--giga-text);
+	vertical-align: middle;
+}
+
+/* Status Badges */
+.giga-sa-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px 10px;
+	border-radius: 20px;
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+.giga-sa-badge::before {
+	content: '';
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: currentColor;
+}
+.giga-sa-badge-pending   { background: #FFF3E0; color: #E65100; }
+.giga-sa-badge-confirmed { background: #E8F5E9; color: #2E7D32; }
+.giga-sa-badge-notified  { background: #E3F2FD; color: #1565C0; }
+.giga-sa-badge-purchased { background: #FFF3E0; color: #E65100; }
+.giga-sa-badge-unsubscribed { background: #FAFAFA; color: #9E9E9E; }
+
+/* Action Buttons */
+.giga-sa-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 5px 12px;
+	border-radius: var(--giga-radius-sm);
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+	border: none;
+	transition: all 0.2s;
+	text-decoration: none;
+}
+.giga-sa-btn-edit {
+	background: var(--giga-primary-light);
+	color: var(--giga-primary);
+}
+.giga-sa-btn-edit:hover {
+	background: var(--giga-primary);
+	color: white;
+}
+.giga-sa-btn-delete {
+	background: #FFE8E8;
+	color: var(--giga-danger);
+}
+.giga-sa-btn-delete:hover {
+	background: var(--giga-danger);
+	color: white;
+}
+
+/* -----------------------------------------------------------------------
+   Section 2: Settings Page (5 Tabs)
+   ----------------------------------------------------------------------- */
+
+/* Settings Page Header */
+.giga-sa-settings-wrap {
+	max-width: 900px;
+}
+
+/* Tab Navigation */
+.giga-sa-tabs-nav {
+	display: flex;
+	gap: 4px;
+	background: var(--giga-white);
+	padding: 6px;
+	border-radius: var(--giga-radius);
+	box-shadow: var(--giga-shadow);
+	margin-bottom: 24px;
+	border: none;
+	width: fit-content;
+}
+.giga-sa-tab-btn {
+	padding: 10px 20px;
+	border-radius: var(--giga-radius-sm);
+	border: none;
+	background: transparent;
+	color: var(--giga-muted);
+	font-weight: 600;
+	font-size: 13px;
+	cursor: pointer;
+	transition: all 0.2s;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	white-space: nowrap;
+}
+.giga-sa-tab-btn:hover {
+	background: var(--giga-primary-light);
+	color: var(--giga-primary);
+}
+.giga-sa-tab-btn.active {
+	background: var(--giga-primary);
+	color: white;
+	box-shadow: 0 4px 12px rgba(108, 62, 244, 0.3);
+}
+
+/* Settings Cards */
+.giga-sa-settings-card {
+	background: var(--giga-white);
+	border-radius: var(--giga-radius);
+	box-shadow: var(--giga-shadow);
+	padding: 28px;
+	margin-bottom: 20px;
+}
+.giga-sa-settings-card h2 {
+	font-size: 16px;
+	font-weight: 700;
+	color: var(--giga-dark);
+	margin: 0 0 20px;
+	padding-bottom: 16px;
+	border-bottom: 2px solid var(--giga-primary-light);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+.giga-sa-settings-card .form-table th {
+	color: var(--giga-text);
+	font-weight: 600;
+	font-size: 13px;
+	width: 220px;
+	padding: 16px 16px 16px 0;
+}
+.giga-sa-settings-card .form-table td {
+	padding: 12px 0;
+}
+.giga-sa-settings-card .description {
+	color: var(--giga-muted);
+	font-size: 12px;
+	margin-top: 4px;
+}
+.giga-sa-settings-card input[type="text"],
+.giga-sa-settings-card input[type="email"],
+.giga-sa-settings-card input[type="number"],
+.giga-sa-settings-card textarea {
+	border: 2px solid var(--giga-border);
+	border-radius: var(--giga-radius-sm);
+	padding: 8px 12px;
+	font-size: 13px;
+	transition: border-color 0.2s;
+	width: 100%;
+	max-width: 400px;
+}
+.giga-sa-settings-card input:focus,
+.giga-sa-settings-card textarea:focus {
+	border-color: var(--giga-primary);
+	outline: none;
+	box-shadow: 0 0 0 3px rgba(108, 62, 244, 0.1);
+}
+
+/* Save Button */
+.giga-sa-save-btn {
+	background: linear-gradient(135deg, var(--giga-primary), #8B5CF6);
+	color: white;
+	border: none;
+	padding: 12px 32px;
+	border-radius: var(--giga-radius-sm);
+	font-size: 14px;
+	font-weight: 700;
+	cursor: pointer;
+	transition: all 0.2s;
+	box-shadow: 0 4px 12px rgba(108, 62, 244, 0.3);
+}
+.giga-sa-save-btn:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 6px 20px rgba(108, 62, 244, 0.4);
 }
