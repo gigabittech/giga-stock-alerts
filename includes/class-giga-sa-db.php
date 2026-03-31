@@ -38,10 +38,10 @@ class Giga_SA_DB {
 		global $wpdb;
 
 		$charset_collate    = $wpdb->get_charset_collate();
-		$alerts_table_name  = $wpdb->prefix . 'giga_stock_alerts';
-		$log_table_name     = $wpdb->prefix . 'giga_stock_alerts_log';
+		$alerts_table_name  = esc_sql( $wpdb->prefix . 'giga_stock_alerts' );
+		$log_table_name     = esc_sql( $wpdb->prefix . 'giga_stock_alerts_log' );
 
-		$sql_alerts = "CREATE TABLE {$alerts_table_name} (
+		$sql_alerts = "CREATE TABLE `{$alerts_table_name}` (
 			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
 			product_id BIGINT(20) UNSIGNED NOT NULL,
 			variation_id BIGINT(20) UNSIGNED DEFAULT 0,
@@ -57,7 +57,7 @@ class Giga_SA_DB {
 			KEY product_status (product_id, variation_id, status)
 		) {$charset_collate};";
 
-		$sql_log = "CREATE TABLE {$log_table_name} (
+		$sql_log = "CREATE TABLE `{$log_table_name}` (
 			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
 			subscription_id BIGINT(20) UNSIGNED NOT NULL,
 			channel VARCHAR(50) NOT NULL,
@@ -83,16 +83,16 @@ class Giga_SA_DB {
 	public static function drop_tables(): void {
 		global $wpdb;
 
-		$alerts_table_name = $wpdb->prefix . 'giga_stock_alerts';
-		$log_table_name    = $wpdb->prefix . 'giga_stock_alerts_log';
+		$alerts_table_name = esc_sql( $wpdb->prefix . 'giga_stock_alerts' );
+		$log_table_name    = esc_sql( $wpdb->prefix . 'giga_stock_alerts_log' );
 
 		// Table names cannot be parameterized — using direct query intentionally.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
-		$wpdb->query( "DROP TABLE IF EXISTS {$alerts_table_name}" );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->query( "DROP TABLE IF EXISTS `{$alerts_table_name}`" );
 		
 		// Table names cannot be parameterized — using direct query intentionally.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
-		$wpdb->query( "DROP TABLE IF EXISTS {$log_table_name}" );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->query( "DROP TABLE IF EXISTS `{$log_table_name}`" );
 	}
 
 	// -----------------------------------------------------------------------
@@ -107,7 +107,7 @@ class Giga_SA_DB {
 	 */
 	public static function insert_subscription( array $data ) {
 		global $wpdb;
-		$table = $wpdb->prefix . 'giga_stock_alerts';
+		$table = esc_sql( $wpdb->prefix . 'giga_stock_alerts' );
 
 		$product_id   = isset( $data['product_id'] ) ? absint( $data['product_id'] ) : 0;
 		$variation_id = isset( $data['variation_id'] ) ? absint( $data['variation_id'] ) : 0;
@@ -156,12 +156,12 @@ class Giga_SA_DB {
 	 */
 	public static function get_subscription_by_email_product( string $email, int $product_id, int $variation_id ) {
 		global $wpdb;
-		$table = $wpdb->prefix . 'giga_stock_alerts';
+		$table = esc_sql( $wpdb->prefix . 'giga_stock_alerts' );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		return $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT * FROM {$table} WHERE email = %s AND product_id = %d AND variation_id = %d LIMIT 1",
+				"SELECT * FROM `{$table}` WHERE email = %s AND product_id = %d AND variation_id = %d LIMIT 1",
 				$email,
 				$product_id,
 				$variation_id
@@ -179,12 +179,12 @@ class Giga_SA_DB {
 	 */
 	public static function get_subscribers_for_product( int $product_id, int $variation_id, string $status ): array {
 		global $wpdb;
-		$table = $wpdb->prefix . 'giga_stock_alerts';
+		$table = esc_sql( $wpdb->prefix . 'giga_stock_alerts' );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		return $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM {$table} WHERE product_id = %d AND variation_id = %d AND status = %s ORDER BY subscribed_at ASC",
+				"SELECT * FROM `{$table}` WHERE product_id = %d AND variation_id = %d AND status = %s ORDER BY subscribed_at ASC",
 				$product_id,
 				$variation_id,
 				$status
@@ -202,7 +202,7 @@ class Giga_SA_DB {
 	 */
 	public static function update_subscription_status( int $id, string $status, array $extra = [] ) {
 		global $wpdb;
-		$table = $wpdb->prefix . 'giga_stock_alerts';
+		$table = esc_sql( $wpdb->prefix . 'giga_stock_alerts' );
 
 		$data   = [ 'status' => $status ];
 		$format = [ '%s' ];
@@ -231,7 +231,7 @@ class Giga_SA_DB {
 	 */
 	public static function update_subscription( int $id, array $data ): bool {
 		global $wpdb;
-		$table = $wpdb->prefix . 'giga_stock_alerts';
+		$table = esc_sql( $wpdb->prefix . 'giga_stock_alerts' );
 
 		$allowed = [ 'customer_name', 'email', 'status' ];
 		$update  = [];
@@ -268,12 +268,12 @@ class Giga_SA_DB {
 	 */
 	public static function get_subscription_by_token( string $token ) {
 		global $wpdb;
-		$table = $wpdb->prefix . 'giga_stock_alerts';
+		$table = esc_sql( $wpdb->prefix . 'giga_stock_alerts' );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		return $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT * FROM {$table} WHERE confirm_token = %s LIMIT 1",
+				"SELECT * FROM `{$table}` WHERE confirm_token = %s LIMIT 1",
 				$token
 			)
 		);
@@ -287,12 +287,12 @@ class Giga_SA_DB {
 	 */
 	public static function count_subscriptions_by_product( int $product_id ): int {
 		global $wpdb;
-		$table = $wpdb->prefix . 'giga_stock_alerts';
+		$table = esc_sql( $wpdb->prefix . 'giga_stock_alerts' );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		return (int) $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$table} WHERE product_id = %d AND status = 'confirmed'",
+				"SELECT COUNT(*) FROM `{$table}` WHERE product_id = %d AND status = 'confirmed'",
 				$product_id
 			)
 		);
@@ -306,12 +306,12 @@ class Giga_SA_DB {
 	 */
 	public static function get_subscriptions_by_email( string $email ): array {
 		global $wpdb;
-		$table = $wpdb->prefix . 'giga_stock_alerts';
+		$table = esc_sql( $wpdb->prefix . 'giga_stock_alerts' );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		return $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM {$table} WHERE email = %s AND status IN ('confirmed', 'notified') ORDER BY subscribed_at DESC",
+				"SELECT * FROM `{$table}` WHERE email = %s AND status IN ('confirmed', 'notified') ORDER BY subscribed_at DESC",
 				$email
 			)
 		);
@@ -329,7 +329,7 @@ class Giga_SA_DB {
 	 */
 	public static function log_notification( array $data ) {
 		global $wpdb;
-		$table = $wpdb->prefix . 'giga_stock_alerts_log';
+		$table = esc_sql( $wpdb->prefix . 'giga_stock_alerts_log' );
 
 		$subscription_id = isset( $data['subscription_id'] ) ? absint( $data['subscription_id'] ) : 0;
 		$channel         = isset( $data['channel'] ) ? sanitize_text_field( wp_unslash( $data['channel'] ) ) : '';

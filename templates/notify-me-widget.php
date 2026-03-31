@@ -18,15 +18,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$wrapper_style = $is_hidden ? 'display: none;' : '';
-$wrapper_class = 'giga-sa-notify-wrapper';
+$giga_sa_wrapper_style = $is_hidden ? 'display: none;' : '';
+$giga_sa_wrapper_class = 'giga-sa-notify-wrapper';
 
 if ( $product->is_type( 'variable' ) ) {
-	$wrapper_class .= ' is-variable';
+	$giga_sa_wrapper_class .= ' is-variable';
 }
 ?>
 
-<div class="<?php echo esc_attr( $wrapper_class ); ?>" style="<?php echo esc_attr( $wrapper_style ); ?>">
+<div class="<?php echo esc_attr( $giga_sa_wrapper_class ); ?>" style="<?php echo esc_attr( $giga_sa_wrapper_style ); ?>">
 	<h3 class="giga-sa-heading"><?php echo esc_html( $heading ); ?></h3>
 	
 	<form class="giga-sa-form" method="POST">

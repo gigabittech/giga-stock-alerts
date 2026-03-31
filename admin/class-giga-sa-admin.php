@@ -618,6 +618,7 @@ if (!class_exists('Giga_SA_Admin')) {
 				<form id="subs-filter" method="get">
 					<input type="hidden" name="page"
 						value="<?php echo esc_attr(isset($_REQUEST['page']) ? sanitize_text_field(wp_unslash($_REQUEST['page'])) : 'giga-stock-alerts-subscribers'); ?>" />
+					<?php wp_nonce_field('giga_sa_subscribers_filter', 'giga_sa_filter_nonce'); ?>
 					<?php
 					$table->views();
 					$table->search_box(__('Search Emails', 'giga-stock-alerts'), 'search_id');
@@ -934,20 +935,29 @@ if (!class_exists('Giga_SA_Admin')) {
 		private function get_subscriber_stats(): array
 		{
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'giga_stock_alerts';
+			$table_name = esc_sql($wpdb->prefix . 'giga_stock_alerts');
 
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-			$counts = $wpdb->get_results($wpdb->prepare("SELECT status, COUNT(*) as count FROM {$table_name} GROUP BY status"), OBJECT_K);
+			$cache_key = 'giga_sa_subscriber_stats';
+			$stats     = wp_cache_get($cache_key, 'giga_stock_alerts');
 
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-			$total = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$table_name}"));
+			if (false === $stats) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$counts = $wpdb->get_results($wpdb->prepare("SELECT status, COUNT(*) as count FROM `{$table_name}` GROUP BY status"), OBJECT_K);
 
-			return [
-				'total' => (int) $total,
-				'confirmed' => isset($counts['confirmed']) ? (int) $counts['confirmed']->count : 0,
-				'notified' => isset($counts['notified']) ? (int) $counts['notified']->count : 0,
-				'purchased' => isset($counts['purchased']) ? (int) $counts['purchased']->count : 0,
-			];
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$total = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM `{$table_name}`"));
+
+				$stats = [
+					'total'     => (int) $total,
+					'confirmed' => isset($counts['confirmed']) ? (int) $counts['confirmed']->count : 0,
+					'notified'  => isset($counts['notified']) ? (int) $counts['notified']->count : 0,
+					'purchased' => isset($counts['purchased']) ? (int) $counts['purchased']->count : 0,
+				];
+
+				wp_cache_set($cache_key, $stats, 'giga_stock_alerts', 300);
+			}
+
+			return $stats;
 		}
 
 		// -----------------------------------------------------------------------
@@ -963,10 +973,10 @@ if (!class_exists('Giga_SA_Admin')) {
 			check_admin_referer('giga_sa_export');
 
 			global $wpdb;
-			$table_name = $wpdb->prefix . 'giga_stock_alerts';
+			$table_name = esc_sql($wpdb->prefix . 'giga_stock_alerts');
 
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-			$subscribers = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$table_name} ORDER BY subscribed_at DESC"), ARRAY_A);
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$subscribers = $wpdb->get_results($wpdb->prepare("SELECT * FROM `{$table_name}` ORDER BY subscribed_at DESC"), ARRAY_A);
 
 			header('Content-Type: text/csv; charset=utf-8');
 			header('Content-Disposition: attachment; filename=giga-stock-alerts-' . gmdate('Y-m-d') . '.csv');
@@ -1004,7 +1014,10 @@ if (!class_exists('Giga_SA_Admin')) {
 				}
 			}
 
-			fclose($output);
+			global $wp_filesystem;
+			if (is_resource($output)) {
+				$wp_filesystem->fclose($output);
+			}
 			exit;
 		}
 
@@ -1141,9 +1154,17 @@ if (!class_exists('Giga_SA_List_Table')) {
 		protected function get_views(): array
 		{
 			global $wpdb;
-			$table = $wpdb->prefix . 'giga_stock_alerts';
+			$table = esc_sql($wpdb->prefix . 'giga_stock_alerts');
 
 			$base_url = admin_url('admin.php?page=giga-stock-alerts-subscribers');
+			
+			// Verify nonce for filter processing
+			if (!empty($_REQUEST['status_filter'])) {
+				if (!isset($_REQUEST['giga_sa_filter_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_REQUEST['giga_sa_filter_nonce'])), 'giga_sa_subscribers_filter')) {
+					wp_die('Security check failed');
+				}
+			}
+			
 			$current = isset($_REQUEST['status_filter']) ? sanitize_text_field(wp_unslash($_REQUEST['status_filter'])) : 'all';
 
 			$views = [];
@@ -1156,16 +1177,19 @@ if (!class_exists('Giga_SA_List_Table')) {
 				'unsubscribed' => __('Unsubscribed', 'giga-stock-alerts'),
 			];
 
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-			$counts = $wpdb->get_results($wpdb->prepare("SELECT status, COUNT(*) as count FROM {$table} GROUP BY status"), OBJECT_K);
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-			$total = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$table}"));
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$counts = $wpdb->get_results($wpdb->prepare("SELECT status, COUNT(*) as count FROM `{$table}` GROUP BY status"), OBJECT_K);
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$total = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM `{$table}`"));
 
 			foreach ($statuses as $key => $label) {
 				$count = 'all' === $key ? $total : (isset($counts[$key]) ? $counts[$key]->count : 0);
 
 				$class = ($current === $key) ? 'current' : '';
-				$url = 'all' === $key ? $base_url : add_query_arg('status_filter', $key, $base_url);
+				$url = 'all' === $key ? $base_url : add_query_arg([
+					'status_filter' => $key,
+					'giga_sa_filter_nonce' => wp_create_nonce('giga_sa_subscribers_filter')
+				], $base_url);
 
 				$views[$key] = sprintf(
 					'<a href="%s" class="%s">%s <span class="count">(%d)</span></a>',
@@ -1308,18 +1332,18 @@ if (!class_exists('Giga_SA_List_Table')) {
 			if ('delete' === $this->current_action()) {
 				check_admin_referer('bulk-' . $this->_args['plural']);
 
-				$ids = isset($_REQUEST['subscription_ids']) ? wp_unslash($_REQUEST['subscription_ids']) : [];
-				if (is_array($ids) && !empty($ids)) {
-					$ids = array_map('absint', $ids);
-
+				$ids = isset($_REQUEST['subscription_ids']) ? array_map('absint', (array) $_REQUEST['subscription_ids']) : [];
+				if (!empty($ids)) {
 					global $wpdb;
-					$table = $wpdb->prefix . 'giga_stock_alerts';
+					$table = esc_sql($wpdb->prefix . 'giga_stock_alerts');
 
-					$ids = array_map('intval', $ids);
 					$placeholders = implode(',', array_fill(0, count($ids), '%d'));
-					// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-					$wpdb->query($wpdb->prepare("DELETE FROM {$table} WHERE id IN ($placeholders)", ...$ids));
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$wpdb->query($wpdb->prepare("DELETE FROM `{$table}` WHERE id IN ($placeholders)", $ids));
 
+					wp_cache_delete('giga_sa_subscriber_stats', 'giga_stock_alerts');
+
+					/* translators: %d: number of subscriptions */
 					add_settings_error('giga_sa_messages', 'giga_sa_deleted', sprintf(_n('%d subscription deleted.', '%d subscriptions deleted.', count($ids), 'giga-stock-alerts'), count($ids)), 'success');
 				}
 			}
@@ -1328,64 +1352,75 @@ if (!class_exists('Giga_SA_List_Table')) {
 		public function prepare_items(): void
 		{
 			global $wpdb;
-			$table = $wpdb->prefix . 'giga_stock_alerts';
+			$table = esc_sql($wpdb->prefix . 'giga_stock_alerts');
 
-			$per_page = 20;
+			// Verify nonce for filter/search actions
+			if (!empty($_REQUEST['s']) || !empty($_REQUEST['status_filter'])) {
+				if (!isset($_REQUEST['giga_sa_filter_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_REQUEST['giga_sa_filter_nonce'])), 'giga_sa_subscribers_filter')) {
+					wp_die('Security check failed');
+				}
+			}
+
+			$per_page     = 20;
 			$current_page = $this->get_pagenum();
 
 			// Columns
-			$columns = $this->get_columns();
-			$hidden = [];
-			$sortable = $this->get_sortable_columns();
+			$columns               = $this->get_columns();
+			$hidden                = [];
+			$sortable              = $this->get_sortable_columns();
 			$this->_column_headers = [$columns, $hidden, $sortable];
 
-			$where = "1=1";
+			$where  = "1=1";
 			$params = [];
 
 			// Search
+			$search_where = '';
 			if (!empty($_REQUEST['s'])) {
-				$where .= " AND email LIKE %s";
+				$search_where = " AND email LIKE %s";
 				$params[] = '%' . $wpdb->esc_like(sanitize_text_field(wp_unslash($_REQUEST['s']))) . '%';
 			}
 
 			// Filter
+			$filter_where = '';
 			if (!empty($_REQUEST['status_filter']) && 'all' !== $_REQUEST['status_filter']) {
-				$where .= " AND status = %s";
+				$filter_where = " AND status = %s";
 				$params[] = sanitize_text_field(wp_unslash($_REQUEST['status_filter']));
 			}
 
-			$sql = "SELECT * FROM {$table} WHERE {$where}";
-			if (!empty($params)) {
-				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-				$sql = $wpdb->prepare($sql, ...$params);
-			}
+			// Build complete WHERE clause
+			$complete_where = "1=1" . $search_where . $filter_where;
 
 			// Order
 			$orderby = !empty($_REQUEST['orderby']) ? sanitize_text_field(wp_unslash($_REQUEST['orderby'])) : 'subscribed_at';
-			$order = !empty($_REQUEST['order']) && 'asc' === strtolower(sanitize_text_field(wp_unslash($_REQUEST['order']))) ? 'ASC' : 'DESC';
+			$order   = !empty($_REQUEST['order']) && 'asc' === strtolower(sanitize_text_field(wp_unslash($_REQUEST['order']))) ? 'ASC' : 'DESC';
 
 			$valid_columns = ['email', 'subscribed_at', 'id'];
 			if (!in_array($orderby, $valid_columns, true)) {
 				$orderby = 'subscribed_at';
 			}
 
-			$sql .= " ORDER BY {$orderby} {$order}";
-
 			// Meta counts
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
-			$total_items = (int) $wpdb->get_var("SELECT COUNT(*) FROM ({$sql}) AS count_table");
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$total_items = (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM `{$table}` WHERE {$complete_where}", $params));
 
-			// Pagination
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-			$sql .= $wpdb->prepare(" LIMIT %d OFFSET %d", $per_page, ($current_page - 1) * $per_page);
+			// Build Final Query with proper parameterization
+			$final_sql = "SELECT * FROM `{$table}` WHERE {$complete_where} ORDER BY " . esc_sql($orderby) . " " . esc_sql($order) . " LIMIT %d OFFSET %d";
+			$params[]  = $per_page;
+			$params[]  = ($current_page - 1) * $per_page;
 
-			// Execute
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
-			$this->items = $wpdb->get_results($sql, ARRAY_A);
+			// Execute with Caching
+			$cache_key = 'giga_sa_list_' . md5($final_sql . serialize($params));
+			$this->items = wp_cache_get($cache_key, 'giga_stock_alerts');
+
+			if (false === $this->items) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+				$this->items = $wpdb->get_results($wpdb->prepare($final_sql, ...$params), ARRAY_A);
+				wp_cache_set($cache_key, $this->items, 'giga_stock_alerts', 300);
+			}
 
 			$this->set_pagination_args([
 				'total_items' => $total_items,
-				'per_page' => $per_page,
+				'per_page'    => $per_page,
 				'total_pages' => ceil($total_items / $per_page),
 			]);
 		}

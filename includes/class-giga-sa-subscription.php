@@ -101,6 +101,11 @@ class Giga_SA_Subscription {
 			return;
 		}
 
+		// Verify nonce for confirmation
+		if ( ! isset( $_GET['giga_sa_confirm_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['giga_sa_confirm_nonce'] ) ), 'giga_sa_confirm' ) ) {
+			wp_die('Security check failed');
+		}
+
 		$token = sanitize_text_field( wp_unslash( $_GET['giga_sa_confirm'] ) );
 		$subscription = Giga_SA_DB::get_subscription_by_token( $token );
 
@@ -109,9 +114,10 @@ class Giga_SA_Subscription {
 			Giga_SA_Email::send_admin_alert( (int) $subscription->id );
 			global $wpdb;
 			// Clear token
+			$table = esc_sql( $wpdb->prefix . 'giga_stock_alerts' );
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 			$wpdb->update(
-				$wpdb->prefix . 'giga_stock_alerts',
+				$table,
 				[ 'confirm_token' => null ],
 				[ 'id' => $subscription->id ],
 				[ '%s' ],
@@ -131,6 +137,11 @@ class Giga_SA_Subscription {
 
 	public function handle_unsubscribe(): void {
 		if ( isset( $_GET['giga_sa_unsubscribe'], $_GET['giga_sa_token'] ) ) {
+			// Verify nonce for unsubscribe
+			if ( ! isset( $_GET['giga_sa_unsubscribe_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['giga_sa_unsubscribe_nonce'] ) ), 'giga_sa_unsubscribe' ) ) {
+				wp_die('Security check failed');
+			}
+
 			$sub_id = absint( wp_unslash( $_GET['giga_sa_unsubscribe'] ) );
 			$hmac   = sanitize_text_field( wp_unslash( $_GET['giga_sa_token'] ) );
 
@@ -141,7 +152,7 @@ class Giga_SA_Subscription {
 				wc_add_notice( __( 'You have been successfully unsubscribed from this stock alert.', 'giga-stock-alerts' ), 'success' );
 				
 				// Strip query strings to clean URL.
-				$base = strtok( $_SERVER['REQUEST_URI'] ?? '', '?' );
+				$base = strtok( esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ?? '' ) ), '?' );
 				wp_safe_redirect( $base );
 				exit;
 			} else {
@@ -158,7 +169,7 @@ class Giga_SA_Subscription {
 		if ( ! is_email( $email ) ) return;
 
 		global $wpdb;
-		$table = $wpdb->prefix . 'giga_stock_alerts';
+		$table = esc_sql( $wpdb->prefix . 'giga_stock_alerts' );
 		$seven_days_ago = gmdate( 'Y-m-d H:i:s', time() - ( 7 * DAY_IN_SECONDS ) );
 
 		foreach ( $order->get_items() as $item ) {
@@ -168,7 +179,7 @@ class Giga_SA_Subscription {
 			// Find notified subscriptions for this user + product within 7 days
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 			$subs = $wpdb->get_results( $wpdb->prepare(
-				"SELECT id FROM {$table} WHERE email = %s AND product_id = %d AND variation_id = %d AND status = 'notified' AND notified_at >= %s",
+				"SELECT id FROM `{$table}` WHERE email = %s AND product_id = %d AND variation_id = %d AND status = 'notified' AND notified_at >= %s",
 				$email,
 				$product_id,
 				$variation_id,
@@ -194,10 +205,10 @@ class Giga_SA_Subscription {
 		}
 
 		global $wpdb;
-		$table = $wpdb->prefix . 'giga_stock_alerts';
+		$table = esc_sql( $wpdb->prefix . 'giga_stock_alerts' );
 		
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$sub = $wpdb->get_row( $wpdb->prepare( "SELECT email FROM {$table} WHERE id = %d", $sub_id ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$sub = $wpdb->get_row( $wpdb->prepare( "SELECT email FROM `{$table}` WHERE id = %d", $sub_id ) );
 
 		if ( ! $sub ) {
 			wp_send_json_error( [ 'message' => __( 'Subscription not found.', 'giga-stock-alerts' ) ] );

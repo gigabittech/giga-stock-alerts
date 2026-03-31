@@ -17,10 +17,10 @@ class Giga_SA_Email {
 	 */
 	public static function send_confirmation( int $subscription_id ): bool {
 		global $wpdb;
-		$table = $wpdb->prefix . 'giga_stock_alerts';
+		$table = esc_sql( $wpdb->prefix . 'giga_stock_alerts' );
 		
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$sub = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d LIMIT 1", $subscription_id ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$sub = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE id = %d LIMIT 1", $subscription_id ) );
 		
 		if ( ! $sub || empty( $sub->confirm_token ) ) {
 			return false;
@@ -34,9 +34,11 @@ class Giga_SA_Email {
 		$confirm_url = add_query_arg( 'giga_sa_confirm', $sub->confirm_token, site_url( '/' ) );
 		$store_name  = get_bloginfo( 'name' );
 
-		$subject = sprintf( __( 'Confirm your stock alert for %s', 'giga-stock-alerts' ), $product->get_name() );
+		/* translators: %1$s: product name */
+		$subject = sprintf( __( 'Confirm your stock alert for %1$s', 'giga-stock-alerts' ), $product->get_name() );
+		/* translators: %1$s: customer name, %2$s: product name, %3$s: store name, %4$s: confirmation URL */
 		$message = sprintf(
-			__( "Hi %s,\n\nPlease confirm your request to be notified when %s is back in stock at %s.\n\nClick here to confirm: %s\n\nIf you did not request this, you can ignore this email.", 'giga-stock-alerts' ),
+			__( "Hi %1\$s,\n\nPlease confirm your request to be notified when %2\$s is back in stock at %3\$s.\n\nClick here to confirm: %4\$s\n\nIf you did not request this, you can ignore this email.", 'giga-stock-alerts' ),
 			$sub->customer_name ?: __( 'there', 'giga-stock-alerts' ),
 			$product->get_name(),
 			$store_name,
@@ -51,10 +53,10 @@ class Giga_SA_Email {
 	 */
 	public static function send_restock_notification( int $subscription_id ): bool {
 		global $wpdb;
-		$table = $wpdb->prefix . 'giga_stock_alerts';
+		$table = esc_sql( $wpdb->prefix . 'giga_stock_alerts' );
 		
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$sub = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d LIMIT 1", $subscription_id ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$sub = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE id = %d LIMIT 1", $subscription_id ) );
 		
 		if ( ! $sub ) {
 			return false;
@@ -120,10 +122,10 @@ class Giga_SA_Email {
 		}
 
 		global $wpdb;
-		$table = $wpdb->prefix . 'giga_stock_alerts';
+		$table = esc_sql( $wpdb->prefix . 'giga_stock_alerts' );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$sub = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d LIMIT 1", $subscription_id ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$sub = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM `{$table}` WHERE id = %d LIMIT 1", $subscription_id ) );
 
 		if ( ! $sub ) {
 			return false;
@@ -140,6 +142,7 @@ class Giga_SA_Email {
 		$count        = Giga_SA_DB::count_subscriptions_by_product( (int) $sub->product_id );
 		$admin_url    = admin_url( 'admin.php?page=giga-stock-alerts&s=' . urlencode( $sub->email ) );
 
+		/* translators: %s: product name */
 		$subject = sprintf( __( 'New stock alert subscription for %s', 'giga-stock-alerts' ), $product_name );
 		$body  = "Product: {$product_name}\n";
 		$body .= "Customer Email: {$sub->email}\n";
@@ -174,13 +177,16 @@ class Giga_SA_Email {
 		}
 
 		if ( ! $sent ) {
-			error_log( sprintf(
-				'[Giga Stock Alerts] Email FAILED | Channel: %s | To: %s | Subject: %s | Error: %s',
-				$channel,
-				$to,
-				$subject,
-				$error_message ?? 'unknown'
-			) );
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log( sprintf(
+					'[Giga Stock Alerts] Email FAILED | Channel: %s | To: %s | Subject: %s | Error: %s',
+					$channel,
+					$to,
+					$subject,
+					$error_message ?? 'unknown'
+				) );
+			}
 		}
 
 		Giga_SA_DB::log_notification( [

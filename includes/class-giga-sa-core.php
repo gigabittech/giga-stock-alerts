@@ -66,11 +66,7 @@ class Giga_SA_Core {
 	}
 
 	private function load_textdomain(): void {
-		load_plugin_textdomain(
-			'giga-stock-alerts',
-			false,
-			dirname( plugin_basename( GIGA_SA_PLUGIN_FILE ) ) . '/languages'
-		);
+		// load_plugin_textdomain() removed since WP 4.6 - WordPress handles this automatically
 	}
 
 	private function load_dependencies(): void {

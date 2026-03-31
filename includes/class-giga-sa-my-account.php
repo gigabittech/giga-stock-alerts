@@ -83,7 +83,7 @@ class Giga_SA_My_Account {
 					<div class="giga-sa-subscription-card">
 						<div class="giga-sa-subscription-card-left">
 							<div class="giga-sa-product-thumb-placeholder">
-								<?php echo $product_image; ?>
+								<?php echo wp_kses_post( $product_image ); ?>
 							</div>
 							<div class="giga-sa-product-info">
 								<h4><?php echo esc_html( $product->get_name() ); ?></h4>

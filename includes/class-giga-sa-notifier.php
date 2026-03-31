@@ -73,11 +73,14 @@ class Giga_SA_Notifier {
 		
 		// Verify product is STILL in stock - abort if went back out of stock
 		if ( ! $product || ! $product->is_in_stock() ) {
-			error_log( sprintf(
-				'[Giga Stock Alerts] Skipping notifications — product %d (variation %d) is not in stock or not found.',
-				$product_id,
-				$variation_id
-			) );
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log( sprintf(
+					'[Giga Stock Alerts] Skipping notifications — product %d (variation %d) is not in stock or not found.',
+					$product_id,
+					$variation_id
+				) );
+			}
 			return;
 		}
 
@@ -111,15 +114,15 @@ class Giga_SA_Notifier {
 	 */
 	public function retry_failed_notifications( int $product_id, int $variation_id ): void {
 		global $wpdb;
-		$log_table = $wpdb->prefix . 'giga_stock_alerts_log';
-		$sub_table = $wpdb->prefix . 'giga_stock_alerts';
+		$log_table = esc_sql( $wpdb->prefix . 'giga_stock_alerts_log' );
+		$sub_table = esc_sql( $wpdb->prefix . 'giga_stock_alerts' );
 
 		// Identify all previously failed sync routines for this direct batch.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$failed_logs = $wpdb->get_results( $wpdb->prepare(
 			"SELECT l.id as log_id, l.subscription_id 
-			 FROM {$log_table} l 
-			 JOIN {$sub_table} s ON l.subscription_id = s.id 
+			 FROM `{$log_table}` l 
+			 JOIN `{$sub_table}` s ON l.subscription_id = s.id 
 			 WHERE s.product_id = %d AND s.variation_id = %d AND l.status = 'failed' AND l.channel = 'restock'",
 			$product_id,
 			$variation_id
