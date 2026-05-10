@@ -1,5 +1,5 @@
 === Giga Stock Alerts — Back in Stock Notifier for WooCommerce ===
-Contributors: safayathossain
+Contributors: safayathossain, gigaapps
 Tags: back in stock, waitlist, woocommerce, out of stock, stock alert
 Requires at least: 6.0
 Tested up to: 6.9
