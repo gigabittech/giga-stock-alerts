@@ -579,3 +579,254 @@
 .giga-sa-save-btn {
 	margin: 0 !important;
 }
+/* ----------------------------------------
+   Dashboard page - pro overlay & grid
+   ---------------------------------------- */
+.giga-sa-dashboard-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+	gap: 20px;
+	margin-top: 25px;
+}
+
+.section-desc {
+	color: #888;
+	font-size: 13px;
+	margin: -5px 0 20px 0;
+}
+
+.giga-sa-placeholder-table {
+	border: 1px solid #f0f0f0;
+	border-radius: 8px;
+	position: relative;
+	min-height: 150px;
+}
+
+.placeholder-row {
+	display: flex;
+	justify-content: space-between;
+	padding: 12px 15px;
+	border-bottom: 1px solid #f5f5f5;
+	font-size: 13px;
+}
+
+.placeholder-row.header {
+	background: #fafafa;
+	font-weight: 500;
+	color: #666;
+}
+
+.placeholder-row:last-child {
+	border-bottom: none;
+}
+
+.giga-sa-pro-overlay {
+	position: absolute;
+	inset: 0;
+	background: rgba(255, 255, 255, 0.85);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	backdrop-filter: blur(2px);
+	border-radius: 8px;
+	text-align: center;
+	padding: 20px;
+}
+
+.giga-sa-pro-overlay .dashicons {
+	font-size: 30px;
+	width: 30px;
+	height: 30px;
+	color: var(--giga-primary);
+	margin-bottom: 10px;
+}
+
+.giga-sa-pro-overlay p {
+	font-weight: 600;
+	color: #444;
+	margin: 0;
+	font-size: 14px;
+}
+
+.giga-sa-insight-cards {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	min-height: 150px;
+}
+
+.insight-pill {
+	background: #fff;
+	border: 1px solid #eee;
+	padding: 15px;
+	border-radius: 10px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.insight-pill .label {
+	color: #666;
+	font-size: 13px;
+}
+
+.insight-pill .value {
+	font-weight: 700;
+	color: #222;
+	font-size: 18px;
+}
+
+/* ----------------------------------------
+   About page - steps, roadmap, info pills
+   ---------------------------------------- */
+.giga-sa-about-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+	gap: 24px;
+	margin-top: 24px;
+}
+
+.span-2-cols {
+	grid-column: span 2;
+}
+
+@media (max-width: 900px) {
+	.span-2-cols {
+		grid-column: span 1;
+	}
+}
+
+.giga-sa-steps-row {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 16px;
+	margin-top: 20px;
+}
+
+.step-card {
+	background: #F8F9FF;
+	border: 1px solid #E8EAF6;
+	padding: 20px;
+	border-radius: 12px;
+	position: relative;
+}
+
+.step-number {
+	position: absolute;
+	top: 10px;
+	right: 15px;
+	font-size: 28px;
+	font-weight: 800;
+	color: var(--giga-primary);
+	opacity: 0.1;
+}
+
+.step-card h3 {
+	margin: 0 0 10px 0;
+	font-size: 16px;
+	color: var(--giga-primary);
+}
+
+.step-card p {
+	margin: 0;
+	font-size: 13px;
+	line-height: 1.6;
+	color: #666;
+}
+
+.giga-sa-feature-list {
+	list-style: none;
+	padding: 0;
+	margin: 15px 0 0 0;
+}
+
+.giga-sa-feature-list li {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 16px;
+	font-size: 14px;
+	padding: 10px;
+	background: #fff;
+	border: 1px solid #f0f0f0;
+	border-radius: 8px;
+}
+
+.giga-sa-feature-list li .dashicons {
+	color: var(--giga-primary);
+	flex-shrink: 0;
+	font-size: 18px;
+}
+
+.giga-sa-info-pills {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin-top: 15px;
+}
+
+.info-pill {
+	padding: 12px 15px;
+	background: #fdfdfd;
+	border: 1px dashed #ddd;
+	border-radius: 8px;
+	font-size: 13px;
+	display: flex;
+	justify-content: space-between;
+}
+
+.info-pill span {
+	font-weight: 600;
+	color: var(--giga-primary);
+}
+
+.giga-sa-about-footer {
+	margin-top: 25px;
+	padding-top: 15px;
+	border-top: 1px solid #f0f0f0;
+	font-style: italic;
+	color: #888;
+	font-size: 13px;
+}
+
+.giga-sa-roadmap-list {
+	display: flex;
+	flex-direction: column;
+	gap: 15px;
+	margin-top: 15px;
+}
+
+.roadmap-item {
+	display: flex;
+	gap: 12px;
+	padding: 12px;
+	border: 1px solid #f5f5f5;
+	border-radius: 10px;
+	background: #fff;
+	align-items: flex-start;
+}
+
+.roadmap-icon {
+	font-size: 20px;
+	flex-shrink: 0;
+}
+
+.roadmap-item strong {
+	font-size: 14px;
+	margin-right: 5px;
+}
+
+.roadmap-item p {
+	margin: 5px 0 0 0;
+	font-size: 12px;
+	color: #777;
+	line-height: 1.4;
+}
+
+.giga-sa-badge.mini {
+	font-size: 9px;
+	padding: 2px 6px;
+	vertical-align: middle;
+}
