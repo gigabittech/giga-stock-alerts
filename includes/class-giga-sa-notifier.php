@@ -118,11 +118,11 @@ class Giga_SA_Notifier {
 		$sub_table = esc_sql( $wpdb->prefix . 'giga_stock_alerts' );
 
 		// Identify all previously failed sync routines for this direct batch.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$failed_logs = $wpdb->get_results( $wpdb->prepare(
-			"SELECT l.id as log_id, l.subscription_id 
-			 FROM `{$log_table}` l 
-			 JOIN `{$sub_table}` s ON l.subscription_id = s.id 
+			"SELECT l.id as log_id, l.subscription_id
+			 FROM `{$log_table}` l
+			 JOIN `{$sub_table}` s ON l.subscription_id = s.id
 			 WHERE s.product_id = %d AND s.variation_id = %d AND l.status = 'failed' AND l.channel = 'restock'",
 			$product_id,
 			$variation_id

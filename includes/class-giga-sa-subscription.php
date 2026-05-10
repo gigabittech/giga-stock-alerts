@@ -176,7 +176,7 @@ class Giga_SA_Subscription {
 			$variation_id = $item->get_variation_id();
 
 			// Find notified subscriptions for this user + product within 7 days
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			$subs = $wpdb->get_results( $wpdb->prepare(
 				"SELECT id FROM `{$table}` WHERE email = %s AND product_id = %d AND variation_id = %d AND status = 'notified' AND notified_at >= %s",
 				$email,

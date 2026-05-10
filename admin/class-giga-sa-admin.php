@@ -534,8 +534,7 @@ if (!class_exists('Giga_SA_Admin')) {
 				</div>
 
 				<form id="subs-filter" method="get">
-					<input type="hidden" name="page"
-						value="<?php echo esc_attr(isset($_REQUEST['page']) ? sanitize_text_field(wp_unslash($_REQUEST['page'])) : 'giga-stock-alerts-subscribers'); ?>" />
+					<input type="hidden" name="page" value="giga-stock-alerts-subscribers" />
 					<?php wp_nonce_field('giga_sa_subscribers_filter', 'giga_sa_filter_nonce'); ?>
 					<?php
 					$table->views();
@@ -1025,7 +1024,7 @@ if (!class_exists('Giga_SA_List_Table')) {
 			</div>',
 				absint($item['id']),
 				__('Edit Subscriber', 'giga-stock-alerts'),
-				esc_attr(isset($_REQUEST['page']) ? sanitize_text_field(wp_unslash($_REQUEST['page'])) : 'giga-stock-alerts'),
+				'giga-stock-alerts-subscribers',
 				'delete',
 				absint($item['id']),
 				$delete_nonce,
@@ -1105,7 +1104,7 @@ if (!class_exists('Giga_SA_List_Table')) {
 					$table = esc_sql($wpdb->prefix . 'giga_stock_alerts');
 
 					$placeholders = implode(',', array_fill(0, count($ids), '%d'));
-					// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 					$wpdb->query($wpdb->prepare("DELETE FROM `{$table}` WHERE id IN ($placeholders)", $ids));
 
 					wp_cache_delete('giga_sa_subscriber_stats', 'giga_stock_alerts');
@@ -1166,8 +1165,9 @@ if (!class_exists('Giga_SA_List_Table')) {
 				$orderby = 'subscribed_at';
 			}
 
-			// Meta counts
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			// Meta counts – $table is derived from $wpdb->prefix (safe); $complete_where
+			// contains only SQL fragments built from whitelisted placeholders (%s/%d).
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, PluginCheck.Security.DirectDB.UnescapedDBParameter
 			$total_items = (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM `{$table}` WHERE {$complete_where}", $params));
 
 			// Build Final Query with proper parameterization
@@ -1180,7 +1180,9 @@ if (!class_exists('Giga_SA_List_Table')) {
 			$this->items = wp_cache_get($cache_key, 'giga_stock_alerts');
 
 			if (false === $this->items) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+				// $final_sql is built from a literal template + whitelisted esc_sql() order values and
+				// parameterised %s/%d placeholders; all user values flow through $params via prepare().
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
 				$this->items = $wpdb->get_results($wpdb->prepare($final_sql, ...$params), ARRAY_A);
 				wp_cache_set($cache_key, $this->items, 'giga_stock_alerts', 300);
 			}

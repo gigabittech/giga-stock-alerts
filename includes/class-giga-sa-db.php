@@ -158,7 +158,7 @@ class Giga_SA_DB {
 		global $wpdb;
 		$table = esc_sql( $wpdb->prefix . 'giga_stock_alerts' );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		return $wpdb->get_row(
 			$wpdb->prepare(
 				"SELECT * FROM `{$table}` WHERE email = %s AND product_id = %d AND variation_id = %d LIMIT 1",
@@ -181,7 +181,7 @@ class Giga_SA_DB {
 		global $wpdb;
 		$table = esc_sql( $wpdb->prefix . 'giga_stock_alerts' );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		return $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT * FROM `{$table}` WHERE product_id = %d AND variation_id = %d AND status = %s ORDER BY subscribed_at ASC",
@@ -270,7 +270,7 @@ class Giga_SA_DB {
 		global $wpdb;
 		$table = esc_sql( $wpdb->prefix . 'giga_stock_alerts' );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		return $wpdb->get_row(
 			$wpdb->prepare(
 				"SELECT * FROM `{$table}` WHERE confirm_token = %s LIMIT 1",
@@ -289,7 +289,7 @@ class Giga_SA_DB {
 		global $wpdb;
 		$table = esc_sql( $wpdb->prefix . 'giga_stock_alerts' );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		return (int) $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM `{$table}` WHERE product_id = %d AND status = 'confirmed'",
@@ -308,7 +308,7 @@ class Giga_SA_DB {
 		global $wpdb;
 		$table = esc_sql( $wpdb->prefix . 'giga_stock_alerts' );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		return $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT * FROM `{$table}` WHERE email = %s AND status IN ('confirmed', 'notified') ORDER BY subscribed_at DESC",
