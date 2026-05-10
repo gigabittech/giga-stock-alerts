@@ -33,9 +33,24 @@ if (!class_exists('Giga_SA_Admin')) {
 			add_action('admin_action_giga_sa_export_csv', [$this, 'export_csv']);
 			add_action('wp_ajax_giga_sa_update_subscription', [$this, 'ajax_update_subscription']);
 
+			// Suppress other plugins' admin notices on our pages.
+			add_action('admin_head', [$this, 'suppress_admin_notices']);
+
 			// Feature 2: Product List Badge
 			add_filter('manage_edit-product_columns', [$this, 'add_product_columns'], 20);
 			add_action('manage_product_posts_custom_column', [$this, 'render_product_column'], 10, 2);
+		}
+
+		/**
+		 * Remove all admin notices on Giga Stock Alerts pages to keep the UI clean.
+		 */
+		public function suppress_admin_notices(): void
+		{
+			$screen = get_current_screen();
+			if ( $screen && strpos( $screen->id, 'giga-stock-alerts' ) !== false ) {
+				remove_all_actions( 'admin_notices' );
+				remove_all_actions( 'all_admin_notices' );
+			}
 		}
 
 		public function enqueue_assets($hook): void
@@ -375,7 +390,7 @@ if (!class_exists('Giga_SA_Admin')) {
 					<h3><?php esc_html_e('Documentation', 'giga-stock-alerts'); ?></h3>
 					<p><?php esc_html_e('Read the full plugin documentation, setup guides, and FAQs.', 'giga-stock-alerts'); ?>
 					</p>
-					<a href="https://gigabit.com.bd/docs/giga-stock-alerts/" target="_blank" rel="noopener noreferrer"
+					<a href="https://gigabit.agency/docs/giga-stock-alerts/" target="_blank" rel="noopener noreferrer"
 						class="button">
 						<?php esc_html_e('View Documentation', 'giga-stock-alerts'); ?>
 					</a>
