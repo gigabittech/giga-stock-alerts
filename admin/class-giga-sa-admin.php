@@ -1165,26 +1165,30 @@ if (!class_exists('Giga_SA_List_Table')) {
 				$orderby = 'subscribed_at';
 			}
 
-			// Meta counts – $table is derived from $wpdb->prefix (safe); $complete_where
-			// contains only SQL fragments built from whitelisted placeholders (%s/%d).
+			// COUNT query – table name from $wpdb->prefix (safe); $complete_where contains
+			// only fixed SQL fragments with %s/%d placeholders; user values are in $params.
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, PluginCheck.Security.DirectDB.UnescapedDBParameter
-			$total_items = (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM `{$table}` WHERE {$complete_where}", $params));
+			$total_items = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$table}` WHERE {$complete_where}", $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
-			// Build Final Query with proper parameterization
-			$final_sql = "SELECT * FROM `{$table}` WHERE {$complete_where} ORDER BY " . esc_sql($orderby) . " " . esc_sql($order) . " LIMIT %d OFFSET %d";
-			$params[]  = $per_page;
-			$params[]  = ($current_page - 1) * $per_page;
+			// Append pagination params and build cache key before adding them to $params.
+			$offset      = ( $current_page - 1 ) * $per_page;
+			$cache_key   = 'giga_sa_list_' . md5( $complete_where . $orderby . $order . $current_page . serialize( $params ) );
+			$data_params = array_merge( $params, [ $per_page, $offset ] );
 
-			// Execute with Caching
-			$cache_key = 'giga_sa_list_' . md5($final_sql . serialize($params));
-			$this->items = wp_cache_get($cache_key, 'giga_stock_alerts');
+			$this->items = wp_cache_get( $cache_key, 'giga_stock_alerts' );
 
-			if (false === $this->items) {
-				// $final_sql is built from a literal template + whitelisted esc_sql() order values and
-				// parameterised %s/%d placeholders; all user values flow through $params via prepare().
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
-				$this->items = $wpdb->get_results($wpdb->prepare($final_sql, ...$params), ARRAY_A);
-				wp_cache_set($cache_key, $this->items, 'giga_stock_alerts', 300);
+			if ( false === $this->items ) {
+				// SQL is inlined directly into prepare() so PHPCS can verify it statically.
+				// ORDER BY columns are validated against $valid_columns + escaped; table from prefix.
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, PluginCheck.Security.DirectDB.UnescapedDBParameter
+				$this->items = $wpdb->get_results(
+					$wpdb->prepare(
+						"SELECT * FROM `{$table}` WHERE {$complete_where} ORDER BY " . esc_sql( $orderby ) . ' ' . esc_sql( $order ) . ' LIMIT %d OFFSET %d',
+						...$data_params
+					),
+					ARRAY_A
+				);
+				wp_cache_set( $cache_key, $this->items, 'giga_stock_alerts', 300 );
 			}
 
 			$this->set_pagination_args([
