@@ -1,0 +1,11 @@
+# Files and directories to exclude from distribution (WP.org SVN / wp dist-archive).
+# These are development/build artefacts that must never ship in the plugin zip.
+
+.claude
+.git
+.gitignore
+.distignore
+README.md
+*.md
+node_modules
+vendor

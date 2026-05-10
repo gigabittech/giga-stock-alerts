@@ -1165,10 +1165,12 @@ if (!class_exists('Giga_SA_List_Table')) {
 				$orderby = 'subscribed_at';
 			}
 
-			// COUNT query – table name from $wpdb->prefix (safe); $complete_where contains
-			// only fixed SQL fragments with %s/%d placeholders; user values are in $params.
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, PluginCheck.Security.DirectDB.UnescapedDBParameter
-			$total_items = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$table}` WHERE {$complete_where}", $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			// COUNT query. $table is from $wpdb->prefix (safe). $complete_where contains only
+			// fixed SQL fragments (" AND email LIKE %s", " AND status = %s") — actual user
+			// values are in $params and are fully parameterised via $wpdb->prepare().
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, PluginCheck.Security.DirectDB.UnescapedDBParameter
+			$total_items = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$table}` WHERE {$complete_where}", $params ) );
+			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, PluginCheck.Security.DirectDB.UnescapedDBParameter
 
 			// Append pagination params and build cache key before adding them to $params.
 			$offset      = ( $current_page - 1 ) * $per_page;
@@ -1178,9 +1180,10 @@ if (!class_exists('Giga_SA_List_Table')) {
 			$this->items = wp_cache_get( $cache_key, 'giga_stock_alerts' );
 
 			if ( false === $this->items ) {
-				// SQL is inlined directly into prepare() so PHPCS can verify it statically.
-				// ORDER BY columns are validated against $valid_columns + escaped; table from prefix.
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, PluginCheck.Security.DirectDB.UnescapedDBParameter
+				// SELECT query. $table is from $wpdb->prefix (safe). $complete_where contains only
+				// fixed SQL fragments — actual user values are in $data_params via $wpdb->prepare().
+				// ORDER BY columns are validated against $valid_columns and escaped via esc_sql().
+				// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, PluginCheck.Security.DirectDB.UnescapedDBParameter
 				$this->items = $wpdb->get_results(
 					$wpdb->prepare(
 						"SELECT * FROM `{$table}` WHERE {$complete_where} ORDER BY " . esc_sql( $orderby ) . ' ' . esc_sql( $order ) . ' LIMIT %d OFFSET %d',
@@ -1188,6 +1191,7 @@ if (!class_exists('Giga_SA_List_Table')) {
 					),
 					ARRAY_A
 				);
+				// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, PluginCheck.Security.DirectDB.UnescapedDBParameter
 				wp_cache_set( $cache_key, $this->items, 'giga_stock_alerts', 300 );
 			}
 

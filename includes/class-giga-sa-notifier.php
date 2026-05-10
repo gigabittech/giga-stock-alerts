@@ -117,8 +117,8 @@ class Giga_SA_Notifier {
 		$log_table = esc_sql( $wpdb->prefix . 'giga_stock_alerts_log' );
 		$sub_table = esc_sql( $wpdb->prefix . 'giga_stock_alerts' );
 
-		// Identify all previously failed sync routines for this direct batch.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// Table names are from $wpdb->prefix (safe). No user input in SQL structure.
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$failed_logs = $wpdb->get_results( $wpdb->prepare(
 			"SELECT l.id as log_id, l.subscription_id
 			 FROM `{$log_table}` l
@@ -127,6 +127,7 @@ class Giga_SA_Notifier {
 			$product_id,
 			$variation_id
 		) );
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		if ( empty( $failed_logs ) ) {
 			return;

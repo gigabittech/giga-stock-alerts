@@ -175,8 +175,8 @@ class Giga_SA_Subscription {
 			$product_id   = $item->get_product_id();
 			$variation_id = $item->get_variation_id();
 
-			// Find notified subscriptions for this user + product within 7 days
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			// Table name is from $wpdb->prefix (safe). No user input in SQL structure.
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			$subs = $wpdb->get_results( $wpdb->prepare(
 				"SELECT id FROM `{$table}` WHERE email = %s AND product_id = %d AND variation_id = %d AND status = 'notified' AND notified_at >= %s",
 				$email,
@@ -184,6 +184,7 @@ class Giga_SA_Subscription {
 				$variation_id,
 				$seven_days_ago
 			) );
+			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 			foreach ( $subs as $sub ) {
 				Giga_SA_DB::update_subscription_status( (int) $sub->id, 'purchased' );
