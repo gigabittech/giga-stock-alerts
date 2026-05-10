@@ -151,9 +151,8 @@ class Giga_SA_Subscription {
 				Giga_SA_DB::update_subscription_status( $sub_id, 'unsubscribed' );
 				wc_add_notice( __( 'You have been successfully unsubscribed from this stock alert.', 'giga-stock-alerts' ), 'success' );
 				
-				// Strip query strings to clean URL.
-				$base = strtok( esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ?? '' ) ), '?' );
-				wp_safe_redirect( $base );
+				// Redirect back to home to strip all query args cleanly.
+				wp_safe_redirect( home_url( '/' ) );
 				exit;
 			} else {
 				wc_add_notice( __( 'Invalid unsubscribe link.', 'giga-stock-alerts' ), 'error' );

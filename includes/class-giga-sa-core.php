@@ -103,7 +103,7 @@ class Giga_SA_Core {
 	// -----------------------------------------------------------------------
 
 	public static function activate(): void {
-		require_once plugin_dir_path( __FILE__ ) . 'class-giga-sa-db.php';
+		require_once GIGA_SA_PLUGIN_DIR . 'includes/class-giga-sa-db.php';
 		Giga_SA_DB::create_tables();
 
 		// Set default options upon first launch

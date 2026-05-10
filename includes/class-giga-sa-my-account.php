@@ -59,8 +59,8 @@ class Giga_SA_My_Account {
 		<div class="giga-sa-account-header">
 			<div class="giga-sa-account-header-icon">🔔</div>
 			<div>
-				<h2>Your Stock Alerts</h2>
-				p>Manage your product notifications</p>
+				<h2><?php esc_html_e( 'Your Stock Alerts', 'giga-stock-alerts' ); ?></h2>
+				<p><?php esc_html_e( 'Manage your product notifications', 'giga-stock-alerts' ); ?></p>
 			</div>
 		</div>
 
@@ -68,8 +68,8 @@ class Giga_SA_My_Account {
 			<!-- Empty State -->
 			<div class="giga-sa-empty-state">
 				<div class="giga-sa-empty-state-icon">🔔</div>
-				<h3>No active stock alerts</h3>
-				<p>Browse products and click 'Notify Me' on out-of-stock items.</p>
+				<h3><?php esc_html_e( 'No active stock alerts', 'giga-stock-alerts' ); ?></h3>
+				<p><?php esc_html_e( "Browse products and click 'Notify Me' on out-of-stock items.", 'giga-stock-alerts' ); ?></p>
 			</div>
 		<?php else : ?>
 			<!-- Subscription Cards -->
@@ -78,7 +78,7 @@ class Giga_SA_My_Account {
 					$target_id = $sub->variation_id ?: $sub->product_id;
 					$product   = wc_get_product( $target_id );
 					if ( ! $product ) continue;
-					$product_image = $product->get_image('thumbnail');
+					$product_image = $product->get_image( 'thumbnail' );
 					?>
 					<div class="giga-sa-subscription-card">
 						<div class="giga-sa-subscription-card-left">
@@ -97,7 +97,7 @@ class Giga_SA_My_Account {
 							<button class="giga-sa-unsub-btn"
 									data-id="<?php echo absint( $sub->id ); ?>"
 									data-nonce="<?php echo esc_attr( wp_create_nonce( 'giga_sa_unsubscribe_' . $sub->id ) ); ?>">
-								Unsubscribe
+								<?php esc_html_e( 'Unsubscribe', 'giga-stock-alerts' ); ?>
 							</button>
 						</div>
 					</div>
