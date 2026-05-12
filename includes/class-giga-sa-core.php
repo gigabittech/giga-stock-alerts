@@ -94,8 +94,51 @@ class Giga_SA_Core {
 	}
 
 	private function register_hooks(): void {
-		add_action( 'giga_sa_process_notifications', [ $this->notifier, 'process_notifications' ], 10, 2 );
-		add_action( 'giga_sa_retry_notification', [ $this->notifier, 'retry_failed_notifications' ], 10, 2 );
+		add_action( 'giga_sa_process_notifications',   [ $this->notifier, 'process_notifications' ],   10, 2 );
+		add_action( 'giga_sa_retry_notification',      [ $this->notifier, 'retry_failed_notifications' ], 10, 2 );
+		add_action( 'giga_sa_auto_confirm_cleanup',    [ $this, 'auto_confirm_cleanup' ] );
+	}
+
+	/**
+	 * Auto-confirm or expire stale pending subscriptions.
+	 *
+	 * Runs daily via WP-Cron. Marks pending subscriptions as `confirmed` (auto-confirm)
+	 * when the `giga_sa_double_optin` option is disabled, or deletes them when double
+	 * opt-in is enabled and they are older than `giga_sa_auto_confirm_days` days.
+	 *
+	 * @return void
+	 */
+	public function auto_confirm_cleanup(): void {
+		global $wpdb;
+		$table = esc_sql( $wpdb->prefix . 'giga_stock_alerts' );
+
+		$days         = max( 1, (int) get_option( 'giga_sa_auto_confirm_days', 7 ) );
+		$double_optin = filter_var( get_option( 'giga_sa_double_optin', true ), FILTER_VALIDATE_BOOLEAN );
+		$cutoff       = gmdate( 'Y-m-d H:i:s', strtotime( "-{$days} days" ) );
+
+		if ( $double_optin ) {
+			// Double opt-in ON: delete stale unconfirmed (pending) subscriptions.
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query(
+				$wpdb->prepare(
+					"DELETE FROM `{$table}` WHERE status = 'pending' AND subscribed_at < %s",
+					$cutoff
+				)
+			);
+			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		} else {
+			// Double opt-in OFF: auto-confirm any pending subscriptions older than cutoff.
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query(
+				$wpdb->prepare(
+					"UPDATE `{$table}` SET status = 'confirmed' WHERE status = 'pending' AND subscribed_at < %s",
+					$cutoff
+				)
+			);
+			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		}
+
+		wp_cache_delete( 'giga_sa_subscriber_stats', 'giga_stock_alerts' );
 	}
 
 	// -----------------------------------------------------------------------
@@ -125,7 +168,12 @@ class Giga_SA_Core {
 		add_option( 'giga_sa_delete_data', false );
 		add_option( 'giga_sa_debug_mode', false );
 
-		// Legacy routine cleanup just in case
+		// Schedule daily cleanup cron if not already scheduled.
+		if ( ! wp_next_scheduled( 'giga_sa_auto_confirm_cleanup' ) ) {
+			wp_schedule_event( time(), 'daily', 'giga_sa_auto_confirm_cleanup' );
+		}
+
+		// Legacy routine cleanup just in case.
 		wp_clear_scheduled_hook( 'giga_sa_restock_check' );
 		flush_rewrite_rules();
 	}
@@ -133,6 +181,7 @@ class Giga_SA_Core {
 	public static function deactivate(): void {
 		wp_clear_scheduled_hook( 'giga_sa_process_notifications' );
 		wp_clear_scheduled_hook( 'giga_sa_retry_notification' );
+		wp_clear_scheduled_hook( 'giga_sa_auto_confirm_cleanup' );
 	}
 
 	public function __clone() {

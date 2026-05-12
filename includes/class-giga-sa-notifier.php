@@ -53,14 +53,20 @@ class Giga_SA_Notifier {
 
 		set_transient( $transient_key, true, 10 * MINUTE_IN_SECONDS );
 
-		// For small subscriber lists, process immediately instead of relying on WP cron
+		// For small subscriber lists, process immediately instead of relying on WP cron.
 		$subscribers = Giga_SA_DB::get_subscribers_for_product( $product_id, $variation_id, 'confirmed' );
 		$batch_size  = (int) get_option( 'giga_sa_batch_size', 50 );
+		// Respect the admin-configured notification delay (minutes).
+		$delay_seconds = (int) get_option( 'giga_sa_notification_delay', 1 ) * MINUTE_IN_SECONDS;
 
 		if ( count( $subscribers ) <= $batch_size ) {
-			$this->process_notifications( $product_id, $variation_id );
+			if ( $delay_seconds > 0 ) {
+				wp_schedule_single_event( time() + $delay_seconds, 'giga_sa_process_notifications', [ $product_id, $variation_id ] );
+			} else {
+				$this->process_notifications( $product_id, $variation_id );
+			}
 		} else {
-			wp_schedule_single_event( time() + 60, 'giga_sa_process_notifications', [ $product_id, $variation_id ] );
+			wp_schedule_single_event( time() + $delay_seconds, 'giga_sa_process_notifications', [ $product_id, $variation_id ] );
 		}
 	}
 
@@ -73,7 +79,9 @@ class Giga_SA_Notifier {
 		
 		// Verify product is STILL in stock - abort if went back out of stock
 		if ( ! $product || ! $product->is_in_stock() ) {
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			$debug = ( defined( 'WP_DEBUG' ) && WP_DEBUG )
+				|| filter_var( get_option( 'giga_sa_debug_mode', false ), FILTER_VALIDATE_BOOLEAN );
+			if ( $debug ) {
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 				error_log( sprintf(
 					'[Giga Stock Alerts] Skipping notifications — product %d (variation %d) is not in stock or not found.',
@@ -94,15 +102,13 @@ class Giga_SA_Notifier {
 
 		foreach ( $batches as $batch ) {
 			foreach ( $batch as $sub ) {
-				// Dispatch real email via standard Email framework.
-				Giga_SA_Email::send_restock_notification( (int) $sub->id );
-				
-				// Mark as notified immediately
-				Giga_SA_DB::update_subscription_status( (int) $sub->id, 'notified', [ 'notified_at' => current_time( 'mysql' ) ] );
+				// Only mark as notified when the email actually sent — if it failed
+				// the subscriber stays 'confirmed' so the retry cron can re-attempt.
+				$sent = Giga_SA_Email::send_restock_notification( (int) $sub->id );
+				if ( $sent ) {
+					Giga_SA_DB::update_subscription_status( (int) $sub->id, 'notified', [ 'notified_at' => current_time( 'mysql' ) ] );
+				}
 			}
-			
-			// Rate control padding to prevent host email locks
-			sleep( 5 );
 		}
 
 		// Schedule the retry run for any failed emails

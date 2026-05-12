@@ -27,11 +27,18 @@ class Giga_SA_Email {
 		}
 
 		$product = wc_get_product( $sub->variation_id ?: $sub->product_id );
+		if ( ! $product && $sub->variation_id ) {
+			$product = wc_get_product( $sub->product_id ); // fallback to parent if variation deleted
+		}
 		if ( ! $product ) {
 			return false;
 		}
 
-		$confirm_url = add_query_arg( 'giga_sa_confirm', $sub->confirm_token, site_url( '/' ) );
+		// Nonce is included so the handler can verify the request on arrival.
+		$confirm_url = add_query_arg( [
+			'giga_sa_confirm'       => $sub->confirm_token,
+			'giga_sa_confirm_nonce' => wp_create_nonce( 'giga_sa_confirm' ),
+		], site_url( '/' ) );
 		$store_name  = get_bloginfo( 'name' );
 
 		/* translators: %1$s: product name */
@@ -63,6 +70,9 @@ class Giga_SA_Email {
 		}
 
 		$product = wc_get_product( $sub->variation_id ?: $sub->product_id );
+		if ( ! $product && $sub->variation_id ) {
+			$product = wc_get_product( $sub->product_id ); // fallback to parent if variation deleted
+		}
 		if ( ! $product ) {
 			return false;
 		}
@@ -76,6 +86,8 @@ class Giga_SA_Email {
 		$image_id    = $product->get_image_id();
 		$product_img = $image_id ? wp_get_attachment_image_url( $image_id, 'full' ) : wc_placeholder_img_src();
 
+		// HMAC token authenticates the unsubscribe link — no nonce needed because
+		// email links can be clicked days/weeks after sending (nonces expire in 24 h).
 		$hmac            = hash_hmac( 'sha256', (string) $sub->id, wp_salt( 'auth' ) );
 		$unsubscribe_url = add_query_arg( [
 			'giga_sa_unsubscribe' => $sub->id,
@@ -132,6 +144,9 @@ class Giga_SA_Email {
 		}
 
 		$product = wc_get_product( $sub->variation_id ?: $sub->product_id );
+		if ( ! $product && $sub->variation_id ) {
+			$product = wc_get_product( $sub->product_id ); // fallback to parent if variation deleted
+		}
 		if ( ! $product ) {
 			return false;
 		}
@@ -157,7 +172,9 @@ class Giga_SA_Email {
 	 * Wrapper for wp_mail with WooCommerce settings.
 	 */
 	private static function dispatch( int $subscription_id, string $to, string $subject, string $message, string $channel ): bool {
-		$from_name  = get_option( 'woocommerce_email_from_name', get_bloginfo( 'name' ) );
+		// Use plugin's own "From Name" setting; fall back to WooCommerce, then site name.
+		$from_name  = get_option( 'giga_sa_email_from_name' )
+			?: get_option( 'woocommerce_email_from_name', get_bloginfo( 'name' ) );
 		$from_email = get_option( 'woocommerce_email_from_address', get_option( 'admin_email' ) );
 
 		$headers = [
@@ -177,7 +194,9 @@ class Giga_SA_Email {
 		}
 
 		if ( ! $sent ) {
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			$debug = ( defined( 'WP_DEBUG' ) && WP_DEBUG )
+				|| filter_var( get_option( 'giga_sa_debug_mode', false ), FILTER_VALIDATE_BOOLEAN );
+			if ( $debug ) {
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 				error_log( sprintf(
 					'[Giga Stock Alerts] Email FAILED | Channel: %s | To: %s | Subject: %s | Error: %s',

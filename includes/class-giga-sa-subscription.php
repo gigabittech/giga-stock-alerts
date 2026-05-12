@@ -21,7 +21,8 @@ class Giga_SA_Subscription {
 		add_action( 'wp_ajax_nopriv_giga_sa_subscribe', [ $this, 'ajax_subscribe' ] );
 		add_action( 'init',                             [ $this, 'handle_confirmation' ] );
 		add_action( 'init',                             [ $this, 'handle_unsubscribe' ] );
-		add_action( 'woocommerce_order_status_completed', [ $this, 'track_purchases' ] );
+		add_action( 'woocommerce_order_status_completed',  [ $this, 'track_purchases' ] );
+		add_action( 'woocommerce_order_status_processing', [ $this, 'track_purchases' ] );
 		add_action( 'wp_ajax_giga_sa_my_account_unsubscribe', [ $this, 'ajax_my_account_unsubscribe' ] );
 	}
 
@@ -42,8 +43,9 @@ class Giga_SA_Subscription {
 
 		$ip = $this->get_client_ip();
 		$rate_key = 'giga_sa_rate_' . md5( $ip );
-		$count = (int) get_transient( $rate_key );
-		if ( $count >= 3 ) {
+		$count     = (int) get_transient( $rate_key );
+		$rate_limit = (int) get_option( 'giga_sa_rate_limit', 3 );
+		if ( $count >= $rate_limit ) {
 			wp_send_json_error( [ 'message' => __( 'Rate limit exceeded. Try again later.', 'giga-stock-alerts' ) ] );
 		}
 		set_transient( $rate_key, $count + 1, MINUTE_IN_SECONDS );
@@ -132,16 +134,16 @@ class Giga_SA_Subscription {
 			}
 		} else {
 			wc_add_notice( __( 'Invalid or expired confirmation link.', 'giga-stock-alerts' ), 'error' );
+			wp_safe_redirect( wc_get_page_permalink( 'shop' ) ?: home_url( '/' ) );
+			exit;
 		}
 	}
 
 	public function handle_unsubscribe(): void {
 		if ( isset( $_GET['giga_sa_unsubscribe'], $_GET['giga_sa_token'] ) ) {
-			// Verify nonce for unsubscribe
-			if ( ! isset( $_GET['giga_sa_unsubscribe_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['giga_sa_unsubscribe_nonce'] ) ), 'giga_sa_unsubscribe' ) ) {
-				wp_die('Security check failed');
-			}
-
+			// Authentication is handled by HMAC below — a nonce is intentionally
+			// omitted here because email unsubscribe links may be clicked days/weeks
+			// after the email was sent (WordPress nonces expire within 24 hours).
 			$sub_id = absint( wp_unslash( $_GET['giga_sa_unsubscribe'] ) );
 			$hmac   = sanitize_text_field( wp_unslash( $_GET['giga_sa_token'] ) );
 

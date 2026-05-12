@@ -12,6 +12,7 @@
  * @var string     $btn_text
  * @var string     $gdpr_text
  * @var bool       $is_hidden
+ * @var bool       $show_name_field
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -34,12 +35,14 @@ if ( $product->is_type( 'variable' ) ) {
 		<input type="hidden" name="giga_sa_variation_id" value="0" />
 		<input type="hidden" name="giga_sa_nonce" value="" />
 		
+		<?php if ( ! empty( $show_name_field ) ) : ?>
 		<div class="giga-sa-field-group">
 			<label class="giga-sa-label" for="giga_sa_name_<?php echo esc_attr( $product->get_id() ); ?>">
 				<?php esc_html_e( 'Name (optional)', 'giga-stock-alerts' ); ?>
 			</label>
 			<input type="text" id="giga_sa_name_<?php echo esc_attr( $product->get_id() ); ?>" name="giga_sa_name" class="giga-sa-input" placeholder="<?php esc_attr_e( 'John Doe', 'giga-stock-alerts' ); ?>" />
 		</div>
+		<?php endif; ?>
 
 		<div class="giga-sa-field-group">
 			<label class="giga-sa-label" for="giga_sa_email_<?php echo esc_attr( $product->get_id() ); ?>">

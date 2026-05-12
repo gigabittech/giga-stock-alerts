@@ -47,9 +47,13 @@ class Giga_SA_Widget {
 	 * @return void
 	 */
 	public function enqueue_assets(): void {
-		// Only enqueue on product pages or if the shortcode is used.
-		// For simplicity, we enqueue on all WooCommerce pages or singles.
-		if ( ! is_product() && ! has_shortcode( get_post( get_the_ID() )->post_content ?? '', 'giga_stock_alert' ) ) {
+		$post         = get_post( get_the_ID() );
+		$post_content = $post ? ( $post->post_content ?? '' ) : '';
+		$on_product   = is_product();
+		$on_shortcode = has_shortcode( $post_content, 'giga_stock_alert' );
+		$on_account   = is_account_page();
+
+		if ( ! $on_product && ! $on_shortcode && ! $on_account ) {
 			return;
 		}
 
@@ -59,6 +63,15 @@ class Giga_SA_Widget {
 			[],
 			GIGA_SA_VERSION
 		);
+
+		// Apply admin-configured button colour via inline style.
+		$btn_color = sanitize_hex_color( get_option( 'giga_sa_button_color', '#2271b1' ) );
+		if ( $btn_color ) {
+			wp_add_inline_style(
+				'giga-sa-frontend',
+				'.giga-sa-submit-btn { background-color: ' . $btn_color . ' !important; border-color: ' . $btn_color . ' !important; }'
+			);
+		}
 
 		wp_enqueue_script(
 			'giga-sa-frontend',
@@ -97,6 +110,12 @@ class Giga_SA_Widget {
 
 		// If it's a simple product and is in stock, do nothing.
 		if ( $product->is_in_stock() && ! $product->is_type( 'variable' ) ) {
+			return;
+		}
+
+		// Respect the "Hide Widget on Hidden Products" setting.
+		$hide_on_hidden = filter_var( get_option( 'giga_sa_hide_outofstock', false ), FILTER_VALIDATE_BOOLEAN );
+		if ( $hide_on_hidden && ( ! $product->is_visible() || 'hidden' === $product->get_catalog_visibility() ) ) {
 			return;
 		}
 
@@ -140,9 +159,10 @@ class Giga_SA_Widget {
 	 */
 	private function display_form( WC_Product $product ): void {
 		// Get options with defaults.
-		$heading   = get_option( 'giga_sa_button_heading', __( 'Out of Stock — Get Notified!', 'giga-stock-alerts' ) );
-		$btn_text  = get_option( 'giga_sa_button_text', __( 'Notify Me!', 'giga-stock-alerts' ) );
-		$gdpr_text = get_option( 'giga_sa_gdpr_text', __( 'I agree to receive email notifications regarding this product.', 'giga-stock-alerts' ) );
+		$heading         = get_option( 'giga_sa_button_heading', __( 'Out of Stock — Get Notified!', 'giga-stock-alerts' ) );
+		$btn_text        = get_option( 'giga_sa_button_text', __( 'Notify Me!', 'giga-stock-alerts' ) );
+		$gdpr_text       = get_option( 'giga_sa_gdpr_text', __( 'I agree to receive email notifications regarding this product.', 'giga-stock-alerts' ) );
+		$show_name_field = filter_var( get_option( 'giga_sa_show_name_field', true ), FILTER_VALIDATE_BOOLEAN );
 
 		// For variable products, if the main product is "in stock" (some variations exist),
 		// we initially hide the widget, letting JS show it when an out-of-stock variation is selected.
@@ -151,11 +171,12 @@ class Giga_SA_Widget {
 		$this->load_template(
 			'notify-me-widget.php',
 			[
-				'product'   => $product,
-				'heading'   => $heading,
-				'btn_text'  => $btn_text,
-				'gdpr_text' => $gdpr_text,
-				'is_hidden' => $is_hidden,
+				'product'         => $product,
+				'heading'         => $heading,
+				'btn_text'        => $btn_text,
+				'gdpr_text'       => $gdpr_text,
+				'is_hidden'       => $is_hidden,
+				'show_name_field' => $show_name_field,
 			]
 		);
 	}

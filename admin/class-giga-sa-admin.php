@@ -723,11 +723,10 @@ if (!class_exists('Giga_SA_Admin')) {
 			$stats     = wp_cache_get($cache_key, 'giga_stock_alerts');
 
 			if (false === $stats) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$counts = $wpdb->get_results($wpdb->prepare("SELECT status, COUNT(*) as count FROM `{$table_name}` GROUP BY status"), OBJECT_K);
-
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$total = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM `{$table_name}`"));
+				// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$counts = $wpdb->get_results( "SELECT status, COUNT(*) as count FROM `{$table_name}` GROUP BY status", OBJECT_K );
+				$total  = $wpdb->get_var( "SELECT COUNT(*) FROM `{$table_name}`" );
+				// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 				$stats = [
 					'total'     => (int) $total,
@@ -830,9 +829,8 @@ if (!class_exists('Giga_SA_Admin')) {
 				}
 			}
 
-			global $wp_filesystem;
-			if (is_resource($output)) {
-				$wp_filesystem->fclose($output);
+			if ( is_resource( $output ) ) {
+				fclose( $output ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 			}
 			exit;
 		}
@@ -974,14 +972,12 @@ if (!class_exists('Giga_SA_List_Table')) {
 
 			$base_url = admin_url('admin.php?page=giga-stock-alerts-subscribers');
 			
-			// Verify nonce for filter processing
-			if (!empty($_REQUEST['status_filter'])) {
-				if (!isset($_REQUEST['giga_sa_filter_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_REQUEST['giga_sa_filter_nonce'])), 'giga_sa_subscribers_filter')) {
-					wp_die('Security check failed');
-				}
-			}
-			
-			$current = isset($_REQUEST['status_filter']) ? sanitize_text_field(wp_unslash($_REQUEST['status_filter'])) : 'all';
+			// Status filter is a read-only GET parameter on a capability-gated admin page.
+			// No nonce needed — current_user_can() at the top of render_subscribers_page()
+			// is the access control. Adding a nonce here breaks bookmarked/cached URLs.
+			$current = isset( $_REQUEST['status_filter'] ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				? sanitize_text_field( wp_unslash( $_REQUEST['status_filter'] ) ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				: 'all';
 
 			$views = [];
 			$statuses = [
@@ -993,19 +989,18 @@ if (!class_exists('Giga_SA_List_Table')) {
 				'unsubscribed' => __('Unsubscribed', 'giga-stock-alerts'),
 			];
 
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$counts = $wpdb->get_results($wpdb->prepare("SELECT status, COUNT(*) as count FROM `{$table}` GROUP BY status"), OBJECT_K);
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$total = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM `{$table}`"));
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$counts = $wpdb->get_results( "SELECT status, COUNT(*) as count FROM `{$table}` GROUP BY status", OBJECT_K );
+			$total  = $wpdb->get_var( "SELECT COUNT(*) FROM `{$table}`" );
+			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 			foreach ($statuses as $key => $label) {
 				$count = 'all' === $key ? $total : (isset($counts[$key]) ? $counts[$key]->count : 0);
 
 				$class = ($current === $key) ? 'current' : '';
-				$url = 'all' === $key ? $base_url : add_query_arg([
-					'status_filter' => $key,
-					'giga_sa_filter_nonce' => wp_create_nonce('giga_sa_subscribers_filter')
-				], $base_url);
+				$url = 'all' === $key
+					? $base_url
+					: add_query_arg( [ 'status_filter' => $key ], $base_url );
 
 				$views[$key] = sprintf(
 					'<a href="%s" class="%s">%s <span class="count">(%d)</span></a>',
@@ -1170,13 +1165,9 @@ if (!class_exists('Giga_SA_List_Table')) {
 			global $wpdb;
 			$table = esc_sql($wpdb->prefix . 'giga_stock_alerts');
 
-			// Verify nonce for filter/search actions
-			if (!empty($_REQUEST['s']) || !empty($_REQUEST['status_filter'])) {
-				if (!isset($_REQUEST['giga_sa_filter_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_REQUEST['giga_sa_filter_nonce'])), 'giga_sa_subscribers_filter')) {
-					wp_die('Security check failed');
-				}
-			}
-
+			// Search/filter/sort are read-only GET params on a capability-gated admin page.
+			// No nonce needed — access control is handled by manage_woocommerce capability check.
+			// phpcs:disable WordPress.Security.NonceVerification.Recommended
 			$per_page     = 20;
 			$current_page = $this->get_pagenum();
 
@@ -1191,9 +1182,9 @@ if (!class_exists('Giga_SA_List_Table')) {
 
 			// Search
 			$search_where = '';
-			if (!empty($_REQUEST['s'])) {
+			if ( ! empty( $_REQUEST['s'] ) ) {
 				$search_where = " AND email LIKE %s";
-				$params[] = '%' . $wpdb->esc_like(sanitize_text_field(wp_unslash($_REQUEST['s']))) . '%';
+				$params[] = '%' . $wpdb->esc_like( sanitize_text_field( wp_unslash( $_REQUEST['s'] ) ) ) . '%';
 			}
 
 			// Filter
@@ -1207,11 +1198,12 @@ if (!class_exists('Giga_SA_List_Table')) {
 			$complete_where = "1=1" . $search_where . $filter_where;
 
 			// Order
-			$orderby = !empty($_REQUEST['orderby']) ? sanitize_text_field(wp_unslash($_REQUEST['orderby'])) : 'subscribed_at';
-			$order   = !empty($_REQUEST['order']) && 'asc' === strtolower(sanitize_text_field(wp_unslash($_REQUEST['order']))) ? 'ASC' : 'DESC';
+			$orderby = ! empty( $_REQUEST['orderby'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['orderby'] ) ) : 'subscribed_at';
+			$order   = ! empty( $_REQUEST['order'] ) && 'asc' === strtolower( sanitize_text_field( wp_unslash( $_REQUEST['order'] ) ) ) ? 'ASC' : 'DESC';
+			// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 			$valid_columns = ['email', 'subscribed_at', 'id'];
-			if (!in_array($orderby, $valid_columns, true)) {
+			if ( ! in_array( $orderby, $valid_columns, true ) ) {
 				$orderby = 'subscribed_at';
 			}
 

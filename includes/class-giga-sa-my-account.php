@@ -94,7 +94,7 @@ class Giga_SA_My_Account {
 							<span class="giga-sa-badge giga-sa-badge-<?php echo esc_attr( $sub->status ); ?>">
 								<?php echo esc_html( ucfirst( $sub->status ) ); ?>
 							</span>
-							<button class="giga-sa-unsub-btn"
+							<button class="giga-sa-unsubscribe-btn"
 									data-id="<?php echo absint( $sub->id ); ?>"
 									data-nonce="<?php echo esc_attr( wp_create_nonce( 'giga_sa_unsubscribe_' . $sub->id ) ); ?>">
 								<?php esc_html_e( 'Unsubscribe', 'giga-stock-alerts' ); ?>

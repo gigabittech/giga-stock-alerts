@@ -177,7 +177,9 @@
 	$(document).ready(function () {
 
 		// --- Colour pickers ---
-		$('.giga-sa-color-picker').wpColorPicker();
+		if ( $.fn.wpColorPicker ) {
+			$('.giga-sa-color-picker').wpColorPicker();
+		}
 
 		// --- Tab init ---
 		var hash    = window.location.hash.replace('#', '');

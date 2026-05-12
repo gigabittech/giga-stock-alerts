@@ -320,7 +320,7 @@ class Giga_SA_DB {
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		return $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM `{$table}` WHERE email = %s AND status IN ('confirmed', 'notified') ORDER BY subscribed_at DESC",
+				"SELECT * FROM `{$table}` WHERE email = %s AND status IN ('pending', 'confirmed', 'notified') ORDER BY subscribed_at DESC",
 				$email
 			)
 		);
