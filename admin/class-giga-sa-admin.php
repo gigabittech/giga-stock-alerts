@@ -412,7 +412,14 @@ if (!class_exists('Giga_SA_Admin')) {
 				return;
 			}
 
-			$stats = $this->get_subscriber_stats();
+			$stats        = $this->get_subscriber_stats();
+			$top_products = $this->get_top_wanted_products( 5 );
+
+			// Conversion rate: % of notified customers who then purchased.
+			$notified_and_purchased = $stats['notified'] + $stats['purchased'];
+			$conversion_rate        = $notified_and_purchased > 0
+				? round( ( $stats['purchased'] / $notified_and_purchased ) * 100, 1 )
+				: 0;
 			?>
 			<div class="wrap giga-sa-admin-wrap">
 				<div class="giga-sa-page-header">
@@ -428,75 +435,88 @@ if (!class_exists('Giga_SA_Admin')) {
 				<div class="giga-sa-stats-row">
 					<div class="giga-sa-stat-card">
 						<div class="giga-sa-stat-icon">👥</div>
-						<div class="giga-sa-stat-value"><?php echo esc_html($stats['total']); ?></div>
-						<div class="giga-sa-stat-label">Total Subscribers</div>
+						<div class="giga-sa-stat-value"><?php echo esc_html( $stats['total'] ); ?></div>
+						<div class="giga-sa-stat-label"><?php esc_html_e( 'Total Subscribers', 'giga-stock-alerts' ); ?></div>
 					</div>
 					<div class="giga-sa-stat-card">
 						<div class="giga-sa-stat-icon">✅</div>
-						<div class="giga-sa-stat-value"><?php echo esc_html($stats['confirmed']); ?></div>
-						<div class="giga-sa-stat-label">Confirmed</div>
+						<div class="giga-sa-stat-value"><?php echo esc_html( $stats['confirmed'] ); ?></div>
+						<div class="giga-sa-stat-label"><?php esc_html_e( 'Confirmed', 'giga-stock-alerts' ); ?></div>
 					</div>
 					<div class="giga-sa-stat-card">
 						<div class="giga-sa-stat-icon">📧</div>
-						<div class="giga-sa-stat-value"><?php echo esc_html($stats['notified']); ?></div>
-						<div class="giga-sa-stat-label">Notified</div>
+						<div class="giga-sa-stat-value"><?php echo esc_html( $stats['notified'] ); ?></div>
+						<div class="giga-sa-stat-label"><?php esc_html_e( 'Notified', 'giga-stock-alerts' ); ?></div>
 					</div>
 					<div class="giga-sa-stat-card">
 						<div class="giga-sa-stat-icon">🛒</div>
-						<div class="giga-sa-stat-value"><?php echo esc_html($stats['purchased']); ?></div>
-						<div class="giga-sa-stat-label">Purchased</div>
+						<div class="giga-sa-stat-value"><?php echo esc_html( $stats['purchased'] ); ?></div>
+						<div class="giga-sa-stat-label"><?php esc_html_e( 'Purchased', 'giga-stock-alerts' ); ?></div>
 					</div>
 				</div>
 
 				<div class="giga-sa-dashboard-grid">
-					<!-- Top Wanted Products -->
+					<!-- Top Wanted Products (real data from DB) -->
 					<div class="giga-sa-settings-card">
 						<h2><span class="dashicons dashicons-chart-line"></span>
-							<?php esc_html_e('Top Wanted Products', 'giga-stock-alerts'); ?></h2>
+							<?php esc_html_e( 'Top Wanted Products', 'giga-stock-alerts' ); ?></h2>
 						<p class="section-desc">
-							<?php esc_html_e('Products your customers are waiting for most.', 'giga-stock-alerts'); ?>
+							<?php esc_html_e( 'Products your customers are waiting for most.', 'giga-stock-alerts' ); ?>
 						</p>
 
 						<div class="giga-sa-placeholder-table">
 							<div class="placeholder-row header">
-								<span>Product</span>
-								<span>Requests</span>
+								<span><?php esc_html_e( 'Product', 'giga-stock-alerts' ); ?></span>
+								<span><?php esc_html_e( 'Requests', 'giga-stock-alerts' ); ?></span>
 							</div>
-							<div class="placeholder-row">
-								<span>Example Product #1</span>
-								<span class="count">--</span>
-							</div>
-							<div class="placeholder-row">
-								<span>Example Product #2</span>
-								<span class="count">--</span>
-							</div>
-							<div class="giga-sa-pro-overlay">
-								<span class="dashicons dashicons-lock"></span>
-								<p><?php esc_html_e('Analyze demand trends in Giga Stock Alerts Pro', 'giga-stock-alerts'); ?></p>
-							</div>
+							<?php if ( empty( $top_products ) ) : ?>
+								<div class="placeholder-row">
+									<span><?php esc_html_e( 'No subscribers yet.', 'giga-stock-alerts' ); ?></span>
+									<span class="count">0</span>
+								</div>
+							<?php else : ?>
+								<?php foreach ( $top_products as $row ) : ?>
+									<?php
+									$product      = wc_get_product( (int) $row->product_id );
+									$product_name = $product
+										/* translators: %d: product ID */
+										? $product->get_name()
+										: sprintf( __( 'Product #%d', 'giga-stock-alerts' ), (int) $row->product_id );
+									?>
+									<div class="placeholder-row">
+										<span><?php echo esc_html( $product_name ); ?></span>
+										<span class="count"><?php echo absint( $row->request_count ); ?></span>
+									</div>
+								<?php endforeach; ?>
+							<?php endif; ?>
 						</div>
 					</div>
 
-					<!-- Intelligence Preview -->
+					<!-- Demand Intelligence (real conversion data) -->
 					<div class="giga-sa-settings-card">
 						<h2><span class="dashicons dashicons-lightbulb"></span>
-							<?php esc_html_e('Demand Intelligence', 'giga-stock-alerts'); ?></h2>
-						<p class="section-desc"><?php esc_html_e('Revenue and conversion insights.', 'giga-stock-alerts'); ?></p>
+							<?php esc_html_e( 'Demand Intelligence', 'giga-stock-alerts' ); ?></h2>
+						<p class="section-desc">
+							<?php esc_html_e( 'Conversion insights from your stock alert data.', 'giga-stock-alerts' ); ?>
+						</p>
 
 						<div class="giga-sa-insight-cards">
 							<div class="insight-pill">
-								<span class="label"><?php esc_html_e('Conversion Rate', 'giga-stock-alerts'); ?></span>
-								<span class="value">--%</span>
+								<span class="label"><?php esc_html_e( 'Conversion Rate', 'giga-stock-alerts' ); ?></span>
+								<span class="value"><?php echo esc_html( $conversion_rate ); ?>%</span>
 							</div>
 							<div class="insight-pill">
-								<span class="label"><?php esc_html_e('Revenue Recovered', 'giga-stock-alerts'); ?></span>
-								<span class="value">$0.00</span>
-							</div>
-							<div class="giga-sa-pro-overlay">
-								<span class="dashicons dashicons-lock"></span>
-								<p><?php esc_html_e('Unlock revenue tracking in Pro version', 'giga-stock-alerts'); ?></p>
+								<span class="label"><?php esc_html_e( 'Notified → Purchased', 'giga-stock-alerts' ); ?></span>
+								<span class="value">
+									<?php echo absint( $stats['purchased'] ); ?>
+									/
+									<?php echo absint( $notified_and_purchased ); ?>
+								</span>
 							</div>
 						</div>
+						<p class="section-desc" style="margin-top:8px;font-size:12px;color:#666;">
+							<?php esc_html_e( 'Conversion Rate = customers who purchased ÷ total notified.', 'giga-stock-alerts' ); ?>
+						</p>
 					</div>
 				</div>
 			</div>
@@ -639,7 +659,6 @@ if (!class_exists('Giga_SA_Admin')) {
 								<span class="roadmap-icon">📱</span>
 								<div>
 									<strong><?php esc_html_e('WhatsApp Alerts', 'giga-stock-alerts'); ?></strong>
-									<span class="giga-sa-badge mini"><?php esc_html_e('PRO', 'giga-stock-alerts'); ?></span>
 									<p><?php esc_html_e('Notify customers via 98% open-rate WhatsApp messages.', 'giga-stock-alerts'); ?>
 									</p>
 								</div>
@@ -647,8 +666,7 @@ if (!class_exists('Giga_SA_Admin')) {
 							<div class="roadmap-item">
 								<span class="roadmap-icon">💬</span>
 								<div>
-									<strong><?php esc_html_e('Twilio SMS notifications', 'giga-stock-alerts'); ?></strong>
-									<span class="giga-sa-badge mini"><?php esc_html_e('PRO', 'giga-stock-alerts'); ?></span>
+									<strong><?php esc_html_e('Twilio SMS Notifications', 'giga-stock-alerts'); ?></strong>
 									<p><?php esc_html_e('Reach customers instantly on their phones.', 'giga-stock-alerts'); ?></p>
 								</div>
 							</div>
@@ -656,7 +674,6 @@ if (!class_exists('Giga_SA_Admin')) {
 								<span class="roadmap-icon">📉</span>
 								<div>
 									<strong><?php esc_html_e('Price Drop Alerts', 'giga-stock-alerts'); ?></strong>
-									<span class="giga-sa-badge mini"><?php esc_html_e('PRO', 'giga-stock-alerts'); ?></span>
 									<p><?php esc_html_e('Alert watchers when a price-sensitive drop occurs.', 'giga-stock-alerts'); ?>
 									</p>
 								</div>
@@ -664,9 +681,8 @@ if (!class_exists('Giga_SA_Admin')) {
 							<div class="roadmap-item">
 								<span class="roadmap-icon">🔌</span>
 								<div>
-									<strong><?php esc_html_e('Klaviyo/Mailchimp Sync', 'giga-stock-alerts'); ?></strong>
-									<span class="giga-sa-badge mini"><?php esc_html_e('PRO', 'giga-stock-alerts'); ?></span>
-									<p><?php esc_html_e('Connect your demand data to your ESP.', 'giga-stock-alerts'); ?></p>
+									<strong><?php esc_html_e('Klaviyo / Mailchimp Sync', 'giga-stock-alerts'); ?></strong>
+									<p><?php esc_html_e('Connect your demand data to your email service provider.', 'giga-stock-alerts'); ?></p>
 								</div>
 							</div>
 						</div>
@@ -724,6 +740,40 @@ if (!class_exists('Giga_SA_Admin')) {
 			}
 
 			return $stats;
+		}
+
+		/**
+		 * Get top products by confirmed/notified/purchased subscriber count.
+		 *
+		 * @param int $limit Maximum number of products to return.
+		 * @return array<int, object>
+		 */
+		private function get_top_wanted_products( int $limit = 5 ): array {
+			global $wpdb;
+			$table = esc_sql( $wpdb->prefix . 'giga_stock_alerts' );
+
+			$cache_key = 'giga_sa_top_products_' . $limit;
+			$results   = wp_cache_get( $cache_key, 'giga_stock_alerts' );
+
+			if ( false === $results ) {
+				// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$results = $wpdb->get_results(
+					$wpdb->prepare(
+						"SELECT product_id, COUNT(*) as request_count
+						 FROM `{$table}`
+						 WHERE status IN ('confirmed', 'notified', 'purchased')
+						 GROUP BY product_id
+						 ORDER BY request_count DESC
+						 LIMIT %d",
+						$limit
+					)
+				);
+				// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+				wp_cache_set( $cache_key, $results, 'giga_stock_alerts', 300 );
+			}
+
+			return $results ?: [];
 		}
 
 		// -----------------------------------------------------------------------
