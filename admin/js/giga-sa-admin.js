@@ -241,6 +241,37 @@
 			}
 		});
 
+		// --- Test Email ---
+		$(document).on('click', '#giga-sa-send-test-email', function(e) {
+			e.preventDefault();
+
+			var $btn    = $(this);
+			var $result = $('#giga-sa-test-email-result');
+			var nonce   = $btn.data('nonce');
+			var email   = $btn.data('email');
+
+			$btn.prop('disabled', true).text('Sending...');
+			$result.html('').css('color', '');
+
+			$.post(
+				(typeof gigaSAAdmin !== 'undefined' ? gigaSAAdmin.ajaxUrl : '/wp-admin/admin-ajax.php'),
+				{
+					action: 'giga_sa_send_test_email',
+					nonce:  nonce,
+					email:  email
+				},
+				function(response) {
+					$btn.prop('disabled', false).text('Send Test Email to Admin');
+					if (response.success) {
+						$result.html('✅ ' + response.data.message).css('color', 'green');
+					} else {
+						$result.html('❌ ' + (response.data.message || 'Failed.')).css('color', 'red');
+					}
+					setTimeout(function() { $result.html(''); }, 6000);
+				}
+			);
+		});
+
 		// --- Inline Edit: Edit button ---
 		$(document).on('click', '.giga-sa-edit-btn', function (e) {
 			e.preventDefault();

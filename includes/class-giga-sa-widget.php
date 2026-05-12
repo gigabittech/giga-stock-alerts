@@ -2,6 +2,9 @@
 /**
  * Frontend "Notify Me" widget for Giga Stock Alerts.
  *
+ * Renders the restock notification form on out-of-stock product pages,
+ * and optionally a price-drop alert form on in-stock products.
+ *
  * @package GigaStockAlerts
  * @since   1.0.0
  */
@@ -16,23 +19,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( ! class_exists( 'Giga_SA_Widget' ) ) {
 class Giga_SA_Widget {
 
-	/**
-	 * Constructor.
-	 *
-	 * Note: Subscription handler is no longer injected here directly
-	 * because DB logic is now static.
-	 */
 	public function __construct() {
 		$this->register_hooks();
 	}
 
-	/**
-	 * Register WordPress / WooCommerce hooks.
-	 *
-	 * @return void
-	 */
 	private function register_hooks(): void {
-		add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_assets' ] );
+		add_action( 'wp_enqueue_scripts',            [ $this, 'enqueue_assets' ] );
 		add_action( 'woocommerce_single_product_summary', [ $this, 'render_widget' ], 31 );
 		add_shortcode( 'giga_stock_alert', [ $this, 'render_shortcode' ] );
 	}
@@ -41,11 +33,6 @@ class Giga_SA_Widget {
 	// Assets
 	// -----------------------------------------------------------------------
 
-	/**
-	 * Enqueue front-end CSS and JS.
-	 *
-	 * @return void
-	 */
 	public function enqueue_assets(): void {
 		$post         = get_post( get_the_ID() );
 		$post_content = $post ? ( $post->post_content ?? '' ) : '';
@@ -97,9 +84,9 @@ class Giga_SA_Widget {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * Render the "Notify Me" widget on out-of-stock single-product pages.
-	 *
-	 * @return void
+	 * Render the "Notify Me" widget on single-product pages.
+	 * - Out-of-stock: shows restock alert form.
+	 * - In-stock (and price drop enabled): shows price drop alert form.
 	 */
 	public function render_widget(): void {
 		global $product;
@@ -108,8 +95,10 @@ class Giga_SA_Widget {
 			return;
 		}
 
-		// If it's a simple product and is in stock, do nothing.
-		if ( $product->is_in_stock() && ! $product->is_type( 'variable' ) ) {
+		$product_id = $product->get_id();
+
+		// Respect the per-product "Disable Widget" setting.
+		if ( class_exists( 'Giga_SA_Product_Meta' ) && Giga_SA_Product_Meta::is_widget_disabled( $product_id ) ) {
 			return;
 		}
 
@@ -119,22 +108,33 @@ class Giga_SA_Widget {
 			return;
 		}
 
+		if ( $product->is_in_stock() && ! $product->is_type( 'variable' ) ) {
+			// In-stock simple product — show price drop form if feature is enabled.
+			if ( filter_var( get_option( 'giga_sa_price_drop_enabled', false ), FILTER_VALIDATE_BOOLEAN ) ) {
+				$this->display_price_drop_form( $product );
+			}
+			return;
+		}
+
 		$this->display_form( $product );
 	}
 
 	/**
-	 * Shortcode for custom placement: [giga_stock_alert product_id="123"]
+	 * Shortcode: [giga_stock_alert product_id="123" show_name="yes" heading="..." button_text="..."]
 	 *
 	 * @param array<string, mixed> $atts Shortcode attributes.
 	 * @return string HTML output.
 	 */
 	public function render_shortcode( $atts ): string {
 		$atts = shortcode_atts( [
-			'product_id' => 0,
+			'product_id'  => 0,
+			'show_name'   => '',   // 'yes'/'no' — overrides global setting when set
+			'heading'     => '',   // Overrides global heading setting
+			'button_text' => '',   // Overrides global button text setting
 		], $atts, 'giga_stock_alert' );
 
 		$product_id = absint( $atts['product_id'] );
-		
+
 		if ( ! $product_id ) {
 			global $product;
 			$product_obj = $product;
@@ -146,26 +146,41 @@ class Giga_SA_Widget {
 			return '';
 		}
 
+		// Per-product override check.
+		if ( class_exists( 'Giga_SA_Product_Meta' ) && Giga_SA_Product_Meta::is_widget_disabled( $product_obj->get_id() ) ) {
+			return '';
+		}
+
 		ob_start();
-		$this->display_form( $product_obj );
+
+		// Override heading / button_text / show_name from shortcode attrs.
+		$overrides = [];
+		if ( ! empty( $atts['heading'] ) ) {
+			$overrides['heading'] = sanitize_text_field( $atts['heading'] );
+		}
+		if ( ! empty( $atts['button_text'] ) ) {
+			$overrides['btn_text'] = sanitize_text_field( $atts['button_text'] );
+		}
+		if ( '' !== $atts['show_name'] ) {
+			$overrides['show_name_field'] = ( 'yes' === strtolower( $atts['show_name'] ) );
+		}
+
+		$this->display_form( $product_obj, $overrides );
 		return ob_get_clean();
 	}
 
 	/**
-	 * Output the actual form HTML using the template.
+	 * Output the restock notify-me form.
 	 *
-	 * @param WC_Product $product
-	 * @return void
+	 * @param WC_Product           $product
+	 * @param array<string, mixed> $overrides Optional field overrides from shortcode.
 	 */
-	private function display_form( WC_Product $product ): void {
-		// Get options with defaults.
-		$heading         = get_option( 'giga_sa_button_heading', __( 'Out of Stock — Get Notified!', 'giga-stock-alerts' ) );
-		$btn_text        = get_option( 'giga_sa_button_text', __( 'Notify Me!', 'giga-stock-alerts' ) );
+	private function display_form( WC_Product $product, array $overrides = [] ): void {
+		$heading         = $overrides['heading']        ?? get_option( 'giga_sa_button_heading', __( 'Out of Stock — Get Notified!', 'giga-stock-alerts' ) );
+		$btn_text        = $overrides['btn_text']       ?? get_option( 'giga_sa_button_text', __( 'Notify Me!', 'giga-stock-alerts' ) );
+		$show_name_field = $overrides['show_name_field'] ?? filter_var( get_option( 'giga_sa_show_name_field', true ), FILTER_VALIDATE_BOOLEAN );
 		$gdpr_text       = get_option( 'giga_sa_gdpr_text', __( 'I agree to receive email notifications regarding this product.', 'giga-stock-alerts' ) );
-		$show_name_field = filter_var( get_option( 'giga_sa_show_name_field', true ), FILTER_VALIDATE_BOOLEAN );
 
-		// For variable products, if the main product is "in stock" (some variations exist),
-		// we initially hide the widget, letting JS show it when an out-of-stock variation is selected.
 		$is_hidden = $product->is_type( 'variable' ) && $product->is_in_stock();
 
 		$this->load_template(
@@ -177,6 +192,30 @@ class Giga_SA_Widget {
 				'gdpr_text'       => $gdpr_text,
 				'is_hidden'       => $is_hidden,
 				'show_name_field' => $show_name_field,
+				'alert_type'      => 'restock',
+			]
+		);
+	}
+
+	/**
+	 * Output the price drop alert form (shown on in-stock products).
+	 *
+	 * @param WC_Product $product
+	 */
+	private function display_price_drop_form( WC_Product $product ): void {
+		$gdpr_text       = get_option( 'giga_sa_gdpr_text', __( 'I agree to receive email notifications regarding this product.', 'giga-stock-alerts' ) );
+		$show_name_field = filter_var( get_option( 'giga_sa_show_name_field', true ), FILTER_VALIDATE_BOOLEAN );
+
+		$this->load_template(
+			'notify-me-widget.php',
+			[
+				'product'         => $product,
+				'heading'         => __( '🔔 Watch for a Price Drop', 'giga-stock-alerts' ),
+				'btn_text'        => __( 'Alert Me on Price Drop', 'giga-stock-alerts' ),
+				'gdpr_text'       => $gdpr_text,
+				'is_hidden'       => false,
+				'show_name_field' => $show_name_field,
+				'alert_type'      => 'price_drop',
 			]
 		);
 	}
@@ -190,13 +229,11 @@ class Giga_SA_Widget {
 	 *
 	 * @param string               $template_name Template file name.
 	 * @param array<string, mixed> $args          Variables to extract.
-	 * @return void
 	 */
 	public function load_template( string $template_name, array $args = [] ): void {
 		$theme_template  = get_stylesheet_directory() . '/giga-stock-alerts/' . $template_name;
 		$plugin_template = GIGA_SA_PLUGIN_DIR . 'templates/' . $template_name;
-
-		$template_path = file_exists( $theme_template ) ? $theme_template : $plugin_template;
+		$template_path   = file_exists( $theme_template ) ? $theme_template : $plugin_template;
 
 		if ( ! file_exists( $template_path ) ) {
 			return;

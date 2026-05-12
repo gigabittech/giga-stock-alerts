@@ -1,7 +1,12 @@
 /**
  * Frontend JavaScript for Giga Stock Alerts.
- * 
- * Handles variable product variation stock changes and AJAX form submission.
+ *
+ * Handles:
+ * - Variable product variation stock changes (show/hide widget)
+ * - AJAX restock subscription form submission
+ * - AJAX price drop subscription form submission
+ * - My Account unsubscribe button
+ * - My Account re-subscribe button
  */
 
 (function($) {
@@ -9,73 +14,82 @@
 
 	$(document).ready(function() {
 
-		// ---------------------------------------------------------------------
+		// -----------------------------------------------------------------
 		// Variation Swatching Logic
-		// ---------------------------------------------------------------------
-		
+		// -----------------------------------------------------------------
+
 		$('.variations_form').each(function() {
 			var $form = $(this);
-			
-			// Use WooCommerce's built-in 'found_variation' event
+
 			$form.on('found_variation', function(event, variation) {
 				var $productWrap = $form.closest('.product');
 				var $widget      = $productWrap.find('.giga-sa-notify-wrapper');
-				
+
 				if ( !$widget.length ) {
-					// Fallback if widget is outside .product element
 					$widget = $('.giga-sa-notify-wrapper.is-variable');
 				}
-
 				if ( !$widget.length ) return;
 
 				if ( !variation.is_in_stock ) {
-					// Show widget, set variation ID
 					$widget.slideDown(200);
 					$widget.find('input[name="giga_sa_variation_id"]').val( variation.variation_id );
-					// Reset UI from previous submits
 					$widget.find('.giga-sa-form').show();
 					$widget.find('.giga-sa-message-success').hide();
 					$widget.find('.giga-sa-message-error').hide();
 					$widget.find('input[name="giga_sa_email"]').val('');
 				} else {
-					// In stock, hide widget
 					$widget.slideUp(200);
 					$widget.find('input[name="giga_sa_variation_id"]').val( 0 );
 				}
 			});
 
-			// Hide widget if options are cleared/reset
 			$form.on('reset_data', function() {
 				var $productWrap = $form.closest('.product');
 				var $widget      = $productWrap.find('.giga-sa-notify-wrapper');
-				
+
 				if ( !$widget.length ) {
 					$widget = $('.giga-sa-notify-wrapper.is-variable');
 				}
-				
-				// Only hide if the main product is in stock.
-				// For simplicity, we just slide up.
+
 				$widget.slideUp(200);
 				$widget.find('input[name="giga_sa_variation_id"]').val( 0 );
 			});
 		});
 
-		// ---------------------------------------------------------------------
-		// Form Submission Logic
-		// ---------------------------------------------------------------------
+		// -----------------------------------------------------------------
+		// Restock Subscription Form
+		// -----------------------------------------------------------------
 
-		$(document).on('submit', '.giga-sa-form', function(e) {
+		$(document).on('submit', '.giga-sa-notify-wrapper:not(.is-price-drop) .giga-sa-form', function(e) {
 			e.preventDefault();
+			submitAlertForm($(this), 'giga_sa_subscribe');
+		});
 
-			var $form     = $(this);
+		// -----------------------------------------------------------------
+		// Price Drop Subscription Form
+		// -----------------------------------------------------------------
+
+		$(document).on('submit', '.giga-sa-notify-wrapper.is-price-drop .giga-sa-form', function(e) {
+			e.preventDefault();
+			submitAlertForm($(this), 'giga_sa_price_drop_subscribe');
+		});
+
+		/**
+		 * Shared AJAX subscription form handler.
+		 *
+		 * @param {jQuery} $form
+		 * @param {string} action  WP AJAX action name.
+		 */
+		function submitAlertForm($form, action) {
 			var $wrapper  = $form.closest('.giga-sa-notify-wrapper');
 			var $msgOk    = $wrapper.find('.giga-sa-message-success');
 			var $msgErr   = $wrapper.find('.giga-sa-message-error');
 			var $btn      = $form.find('.giga-sa-submit-btn');
-			
+
 			var productId = $form.find('input[name="giga_sa_product_id"]').val();
 			var varId     = $form.find('input[name="giga_sa_variation_id"]').val();
-			var name      = $form.find('input[name="giga_sa_name"]').val().trim();
+			var alertType = $form.find('input[name="giga_sa_alert_type"]').val() || 'restock';
+			var name      = $form.find('input[name="giga_sa_name"]').val() || '';
 			var email     = $form.find('input[name="giga_sa_email"]').val().trim();
 			var gdpr      = $form.find('input[name="giga_sa_gdpr"]').is(':checked') ? 1 : 0;
 
@@ -83,46 +97,42 @@
 				return;
 			}
 
-			// Clear messages
 			$msgOk.hide().html('');
 			$msgErr.hide().html('');
 
-			// Loading state
 			$btn.prop('disabled', true);
 			var originalText = $btn.text();
-			
+
 			if ( typeof gigaSaParams !== 'undefined' && gigaSaParams.submitting ) {
 				$btn.text(gigaSaParams.submitting);
 			} else {
 				$btn.text('...');
 			}
 
-			// Assign nonce dynamically to avoid caching issues on static page generation
 			var nonce = typeof gigaSaParams !== 'undefined' ? gigaSaParams.nonce : '';
 
 			$.ajax({
-				url: typeof gigaSaParams !== 'undefined' ? gigaSaParams.ajaxUrl : '/wp-admin/admin-ajax.php',
+				url:  typeof gigaSaParams !== 'undefined' ? gigaSaParams.ajaxUrl : '/wp-admin/admin-ajax.php',
 				type: 'POST',
 				data: {
-					action: 'giga_sa_subscribe',
-					nonce: nonce,
-					product_id: productId,
+					action:       action,
+					nonce:        nonce,
+					product_id:   productId,
 					variation_id: varId,
-					name: name,
-					email: email,
-					gdpr: gdpr
+					alert_type:   alertType,
+					name:         name,
+					email:        email,
+					gdpr:         gdpr
 				},
 				success: function(response) {
 					$btn.prop('disabled', false).text(originalText);
-					
+
 					if ( response.success ) {
-						// Hide form, show success
 						$form.slideUp(200);
 						$msgOk.html(response.data.message || 'Subscribed successfully.').fadeIn();
 					} else {
-						// Error logic
 						var msg = response.data.message || 'An error occurred.';
-						if ( response.data.code === 'duplicate' ) {
+						if ( response.data && response.data.code === 'duplicate' ) {
 							msg = "You're already subscribed!";
 						}
 						$msgErr.html(msg).fadeIn();
@@ -133,11 +143,11 @@
 					$msgErr.html('An unexpected error occurred. Please try again.').fadeIn();
 				}
 			});
-		});
+		}
 
-		// ---------------------------------------------------------------------
-		// My Account - Unsubscribe logic
-		// ---------------------------------------------------------------------
+		// -----------------------------------------------------------------
+		// My Account — Unsubscribe
+		// -----------------------------------------------------------------
 
 		$(document).on('click', '.giga-sa-unsubscribe-btn', function(e) {
 			e.preventDefault();
@@ -145,7 +155,7 @@
 			var $btn   = $(this);
 			var subId  = $btn.data('id');
 			var nonce  = $btn.data('nonce');
-			
+
 			if ( !confirm( 'Are you sure you want to unsubscribe from this stock alert?' ) ) {
 				return;
 			}
@@ -153,20 +163,19 @@
 			$btn.prop('disabled', true).text('...');
 
 			$.ajax({
-				url: typeof gigaSaParams !== 'undefined' ? gigaSaParams.ajaxUrl : '/wp-admin/admin-ajax.php',
+				url:  typeof gigaSaParams !== 'undefined' ? gigaSaParams.ajaxUrl : '/wp-admin/admin-ajax.php',
 				type: 'POST',
 				data: {
-					action: 'giga_sa_my_account_unsubscribe',
+					action:          'giga_sa_my_account_unsubscribe',
 					subscription_id: subId,
-					nonce: nonce
+					nonce:           nonce
 				},
 				success: function(response) {
 					if ( response.success ) {
-						// Remove the row or update status
-						$btn.closest('tr').fadeOut(400, function() {
+						var $card = $btn.closest('.giga-sa-subscription-card');
+						$card.fadeOut(400, function() {
 							$(this).remove();
-							// If no rows left, refresh or show message
-							if ( $('.woocommerce-MyAccount-orders tbody tr').length === 0 ) {
+							if ( $('.giga-sa-subscription-card').length === 0 ) {
 								location.reload();
 							}
 						});
@@ -178,6 +187,50 @@
 				error: function() {
 					alert( 'An unexpected error occurred.' );
 					$btn.prop('disabled', false).text('Unsubscribe');
+				}
+			});
+		});
+
+		// -----------------------------------------------------------------
+		// My Account — Re-subscribe
+		// -----------------------------------------------------------------
+
+		$(document).on('click', '.giga-sa-resubscribe-btn', function(e) {
+			e.preventDefault();
+
+			var $btn  = $(this);
+			var subId = $btn.data('id');
+			var nonce = $btn.data('nonce');
+
+			$btn.prop('disabled', true).text('...');
+
+			$.ajax({
+				url:  typeof gigaSaParams !== 'undefined' ? gigaSaParams.ajaxUrl : '/wp-admin/admin-ajax.php',
+				type: 'POST',
+				data: {
+					action:          'giga_sa_resubscribe',
+					subscription_id: subId,
+					nonce:           nonce
+				},
+				success: function(response) {
+					if ( response.success ) {
+						var $card = $btn.closest('.giga-sa-subscription-card');
+						// Move from historical to active section visually.
+						$card.fadeOut(300, function() {
+							$(this).remove();
+						});
+						// Show a brief success notice.
+						var $notice = $('<div class="woocommerce-message" style="margin-top:1rem;">' + ( response.data.message || "You're back on the list!" ) + '</div>');
+						$('.giga-sa-subscription-list').first().before( $notice );
+						setTimeout(function() { $notice.fadeOut(); }, 4000);
+					} else {
+						alert( response.data.message || 'Error occurred.' );
+						$btn.prop('disabled', false).text('Re-subscribe');
+					}
+				},
+				error: function() {
+					alert( 'An unexpected error occurred.' );
+					$btn.prop('disabled', false).text('Re-subscribe');
 				}
 			});
 		});

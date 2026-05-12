@@ -35,6 +35,9 @@ class Giga_SA_Core {
 	public Giga_SA_Notifier $notifier;
 	public Giga_SA_Widget $widget;
 	public Giga_SA_My_Account $my_account;
+	public Giga_SA_Price_Drop $price_drop;
+	public Giga_SA_Low_Stock $low_stock;
+	public Giga_SA_Weekly_Digest $weekly_digest;
 	public ?Giga_SA_Admin $admin = null;
 
 	public static function instance(): Giga_SA_Core {
@@ -66,7 +69,7 @@ class Giga_SA_Core {
 	}
 
 	private function load_textdomain(): void {
-		// load_plugin_textdomain() removed since WP 4.6 - WordPress handles this automatically
+		// load_plugin_textdomain() removed since WP 4.6 — WordPress handles this automatically.
 	}
 
 	private function load_dependencies(): void {
@@ -76,17 +79,24 @@ class Giga_SA_Core {
 		require_once GIGA_SA_PLUGIN_DIR . 'includes/class-giga-sa-subscription.php';
 		require_once GIGA_SA_PLUGIN_DIR . 'includes/class-giga-sa-widget.php';
 		require_once GIGA_SA_PLUGIN_DIR . 'includes/class-giga-sa-my-account.php';
-		
+		require_once GIGA_SA_PLUGIN_DIR . 'includes/class-giga-sa-product-meta.php';
+		require_once GIGA_SA_PLUGIN_DIR . 'includes/class-giga-sa-price-drop.php';
+		require_once GIGA_SA_PLUGIN_DIR . 'includes/class-giga-sa-low-stock.php';
+		require_once GIGA_SA_PLUGIN_DIR . 'includes/class-giga-sa-weekly-digest.php';
+
 		if ( is_admin() ) {
 			require_once GIGA_SA_PLUGIN_DIR . 'admin/class-giga-sa-admin.php';
 		}
 	}
 
 	private function init_classes(): void {
-		$this->subscription = new Giga_SA_Subscription();
-		$this->notifier     = new Giga_SA_Notifier();
-		$this->widget       = new Giga_SA_Widget();
-		$this->my_account   = new Giga_SA_My_Account();
+		$this->subscription  = new Giga_SA_Subscription();
+		$this->notifier      = new Giga_SA_Notifier();
+		$this->widget        = new Giga_SA_Widget();
+		$this->my_account    = new Giga_SA_My_Account();
+		$this->price_drop    = new Giga_SA_Price_Drop();
+		$this->low_stock     = new Giga_SA_Low_Stock();
+		$this->weekly_digest = new Giga_SA_Weekly_Digest();
 
 		if ( is_admin() ) {
 			$this->admin = new Giga_SA_Admin();
@@ -148,29 +158,40 @@ class Giga_SA_Core {
 	public static function activate(): void {
 		require_once GIGA_SA_PLUGIN_DIR . 'includes/class-giga-sa-db.php';
 		Giga_SA_DB::create_tables();
+		Giga_SA_DB::maybe_run_migrations();
 
-		// Set default options upon first launch
-		add_option( 'giga_sa_button_heading', __( 'Out of Stock — Get Notified!', 'giga-stock-alerts' ) );
-		add_option( 'giga_sa_button_text', __( 'Notify Me!', 'giga-stock-alerts' ) );
-		add_option( 'giga_sa_success_message', __( "You'll be notified when this product is back!", 'giga-stock-alerts' ) );
-		add_option( 'giga_sa_gdpr_text', __( 'I agree to receive stock notifications for this product.', 'giga-stock-alerts' ) );
-		add_option( 'giga_sa_button_color', '#2271b1' );
-		add_option( 'giga_sa_show_name_field', true );
-		add_option( 'giga_sa_double_optin', true );
-		add_option( 'giga_sa_email_subject', __( 'Great news! {product_name} is back in stock!', 'giga-stock-alerts' ) );
-		add_option( 'giga_sa_email_from_name', '' );
-		add_option( 'giga_sa_admin_notify', true );
-		add_option( 'giga_sa_batch_size', 50 );
+		// Set default options upon first launch.
+		add_option( 'giga_sa_button_heading',    __( 'Out of Stock — Get Notified!', 'giga-stock-alerts' ) );
+		add_option( 'giga_sa_button_text',        __( 'Notify Me!', 'giga-stock-alerts' ) );
+		add_option( 'giga_sa_success_message',    __( "You'll be notified when this product is back!", 'giga-stock-alerts' ) );
+		add_option( 'giga_sa_gdpr_text',          __( 'I agree to receive stock notifications for this product.', 'giga-stock-alerts' ) );
+		add_option( 'giga_sa_button_color',       '#2271b1' );
+		add_option( 'giga_sa_show_name_field',    true );
+		add_option( 'giga_sa_double_optin',       true );
+		add_option( 'giga_sa_email_subject',      __( 'Great news! {product_name} is back in stock!', 'giga-stock-alerts' ) );
+		add_option( 'giga_sa_email_from_name',    '' );
+		add_option( 'giga_sa_email_template',     '' );
+		add_option( 'giga_sa_use_wc_template',    false );
+		add_option( 'giga_sa_admin_notify',       true );
+		add_option( 'giga_sa_batch_size',         50 );
 		add_option( 'giga_sa_notification_delay', 1 );
-		add_option( 'giga_sa_auto_confirm_days', 7 );
-		add_option( 'giga_sa_hide_outofstock', false );
-		add_option( 'giga_sa_rate_limit', 3 );
-		add_option( 'giga_sa_delete_data', false );
-		add_option( 'giga_sa_debug_mode', false );
+		add_option( 'giga_sa_auto_confirm_days',  7 );
+		add_option( 'giga_sa_hide_outofstock',    false );
+		add_option( 'giga_sa_rate_limit',         3 );
+		add_option( 'giga_sa_delete_data',        false );
+		add_option( 'giga_sa_debug_mode',         false );
+		add_option( 'giga_sa_low_stock_threshold', 5 );
+		add_option( 'giga_sa_weekly_digest_enabled', true );
+		add_option( 'giga_sa_weekly_digest_email',   '' );
 
-		// Schedule daily cleanup cron if not already scheduled.
+		// Schedule daily cleanup cron.
 		if ( ! wp_next_scheduled( 'giga_sa_auto_confirm_cleanup' ) ) {
 			wp_schedule_event( time(), 'daily', 'giga_sa_auto_confirm_cleanup' );
+		}
+
+		// Schedule weekly digest cron.
+		if ( ! wp_next_scheduled( 'giga_sa_weekly_digest' ) ) {
+			wp_schedule_event( strtotime( 'next monday 08:00:00' ), 'weekly', 'giga_sa_weekly_digest' );
 		}
 
 		// Legacy routine cleanup just in case.
@@ -182,6 +203,7 @@ class Giga_SA_Core {
 		wp_clear_scheduled_hook( 'giga_sa_process_notifications' );
 		wp_clear_scheduled_hook( 'giga_sa_retry_notification' );
 		wp_clear_scheduled_hook( 'giga_sa_auto_confirm_cleanup' );
+		wp_clear_scheduled_hook( 'giga_sa_weekly_digest' );
 	}
 
 	public function __clone() {

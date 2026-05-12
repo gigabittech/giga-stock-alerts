@@ -830,3 +830,33 @@
 	padding: 2px 6px;
 	vertical-align: middle;
 }
+
+/* ---- Email Template Editor ---- */
+.giga-sa-email-template-editor {
+	font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+	font-size: 13px;
+	line-height: 1.6;
+	border: 1px solid var(--giga-border);
+	border-radius: var(--giga-radius-sm);
+	background: #1e1e2e;
+	color: #cdd6f4;
+	resize: vertical;
+	min-height: 180px;
+}
+.giga-sa-email-template-editor:focus {
+	outline: none;
+	border-color: var(--giga-primary);
+	box-shadow: 0 0 0 2px rgba(108, 62, 244, 0.15);
+}
+
+/* ---- Test Email Result Feedback ---- */
+#giga-sa-test-email-result {
+	font-size: 13px;
+	font-weight: 500;
+}
+
+/* ---- Settings new fields layout ---- */
+.form-table td textarea.giga-sa-email-template-editor {
+	width: 100%;
+	max-width: 680px;
+}

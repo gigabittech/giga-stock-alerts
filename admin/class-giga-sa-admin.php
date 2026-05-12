@@ -32,6 +32,7 @@ if (!class_exists('Giga_SA_Admin')) {
 			add_action('admin_enqueue_scripts', [$this, 'enqueue_assets']);
 			add_action('admin_action_giga_sa_export_csv', [$this, 'export_csv']);
 			add_action('wp_ajax_giga_sa_update_subscription', [$this, 'ajax_update_subscription']);
+			add_action('wp_ajax_giga_sa_send_test_email',     [$this, 'ajax_send_test_email']);
 
 			// Suppress other plugins' admin notices on our pages.
 			add_action('admin_head', [$this, 'suppress_admin_notices']);
@@ -187,6 +188,13 @@ if (!class_exists('Giga_SA_Admin')) {
 			add_settings_field('giga_sa_admin_notify', __('Admin Notification', 'giga-stock-alerts'), [$this, 'render_checkbox_with_desc'], 'giga-stock-alerts-settings', 'giga_sa_email_section', ['id' => 'giga_sa_admin_notify', 'desc' => __('Email me when someone subscribes to a stock alert.', 'giga-stock-alerts')]);
 			add_settings_field('giga_sa_batch_size', __('Emails Per Batch', 'giga-stock-alerts'), [$this, 'render_number_with_desc'], 'giga-stock-alerts-settings', 'giga_sa_email_section', ['id' => 'giga_sa_batch_size', 'min' => 10, 'max' => 100, 'desc' => __('Max emails sent per batch when notifying subscribers.', 'giga-stock-alerts')]);
 
+			register_setting('giga_sa_settings_group', 'giga_sa_use_wc_template', ['sanitize_callback' => 'rest_sanitize_boolean', 'default' => false]);
+			register_setting('giga_sa_settings_group', 'giga_sa_email_template', ['sanitize_callback' => 'wp_kses_post', 'default' => '']);
+
+			add_settings_field('giga_sa_use_wc_template', __('Use WooCommerce Email Wrapper', 'giga-stock-alerts'), [$this, 'render_checkbox_with_desc'], 'giga-stock-alerts-settings', 'giga_sa_email_section', ['id' => 'giga_sa_use_wc_template', 'desc' => __('Wraps notification emails in the WooCommerce email header/footer template.', 'giga-stock-alerts')]);
+			add_settings_field('giga_sa_email_template', __('Custom Email Template (HTML)', 'giga-stock-alerts'), [$this, 'render_email_template_field'], 'giga-stock-alerts-settings', 'giga_sa_email_section', ['id' => 'giga_sa_email_template']);
+			add_settings_field('giga_sa_test_email', __('Send Test Email', 'giga-stock-alerts'), [$this, 'render_test_email_field'], 'giga-stock-alerts-settings', 'giga_sa_email_section', []);
+
 			// --- Tab 3: General ---
 			add_settings_section('giga_sa_general_section', __('General Settings', 'giga-stock-alerts'), null, 'giga-stock-alerts-settings');
 
@@ -197,6 +205,16 @@ if (!class_exists('Giga_SA_Admin')) {
 			add_settings_field('giga_sa_notification_delay', __('Notification Delay (minutes)', 'giga-stock-alerts'), [$this, 'render_number_with_desc'], 'giga-stock-alerts-settings', 'giga_sa_general_section', ['id' => 'giga_sa_notification_delay', 'min' => 1, 'max' => 60, 'desc' => __('How long to wait after restock before sending emails.', 'giga-stock-alerts')]);
 			add_settings_field('giga_sa_auto_confirm_days', __('Auto-expire Pending Subscriptions (days)', 'giga-stock-alerts'), [$this, 'render_number_with_desc'], 'giga-stock-alerts-settings', 'giga_sa_general_section', ['id' => 'giga_sa_auto_confirm_days', 'min' => 1, 'max' => 30, 'desc' => __('Automatically delete unconfirmed subscriptions after this many days.', 'giga-stock-alerts')]);
 			add_settings_field('giga_sa_hide_outofstock', __('Hide Widget on Hidden Products', 'giga-stock-alerts'), [$this, 'render_checkbox_field'], 'giga-stock-alerts-settings', 'giga_sa_general_section', ['id' => 'giga_sa_hide_outofstock']);
+
+			register_setting('giga_sa_settings_group', 'giga_sa_price_drop_enabled', ['sanitize_callback' => 'rest_sanitize_boolean', 'default' => false]);
+			register_setting('giga_sa_settings_group', 'giga_sa_low_stock_threshold', ['sanitize_callback' => 'absint', 'default' => 5]);
+			register_setting('giga_sa_settings_group', 'giga_sa_weekly_digest_enabled', ['sanitize_callback' => 'rest_sanitize_boolean', 'default' => true]);
+			register_setting('giga_sa_settings_group', 'giga_sa_weekly_digest_email', ['sanitize_callback' => 'sanitize_email', 'default' => '']);
+
+			add_settings_field('giga_sa_price_drop_enabled', __('Enable Price Drop Alerts', 'giga-stock-alerts'), [$this, 'render_checkbox_with_desc'], 'giga-stock-alerts-settings', 'giga_sa_general_section', ['id' => 'giga_sa_price_drop_enabled', 'desc' => __('Shows a price drop alert widget on in-stock product pages.', 'giga-stock-alerts')]);
+			add_settings_field('giga_sa_low_stock_threshold', __('Low Stock Alert Threshold', 'giga-stock-alerts'), [$this, 'render_number_with_desc'], 'giga-stock-alerts-settings', 'giga_sa_general_section', ['id' => 'giga_sa_low_stock_threshold', 'min' => 0, 'max' => 100, 'desc' => __('Notify subscribers when stock drops to this quantity. Set 0 to disable.', 'giga-stock-alerts')]);
+			add_settings_field('giga_sa_weekly_digest_enabled', __('Weekly Digest Email', 'giga-stock-alerts'), [$this, 'render_checkbox_with_desc'], 'giga-stock-alerts-settings', 'giga_sa_general_section', ['id' => 'giga_sa_weekly_digest_enabled', 'desc' => __('Send a weekly summary report to the admin email.', 'giga-stock-alerts')]);
+			add_settings_field('giga_sa_weekly_digest_email', __('Digest Recipient Email', 'giga-stock-alerts'), [$this, 'render_text_with_desc'], 'giga-stock-alerts-settings', 'giga_sa_general_section', ['id' => 'giga_sa_weekly_digest_email', 'class' => 'regular-text', 'desc' => __('Leave blank to use the site admin email.', 'giga-stock-alerts')]);
 
 			// --- Tab 4: Advanced ---
 			add_settings_section('giga_sa_advanced_section', __('Advanced Settings', 'giga-stock-alerts'), null, 'giga-stock-alerts-settings');
@@ -266,6 +284,33 @@ if (!class_exists('Giga_SA_Admin')) {
 		{
 			$value = get_option($args['id']);
 			echo '<input type="text" id="' . esc_attr($args['id']) . '" name="' . esc_attr($args['id']) . '" value="' . esc_attr($value) . '" class="giga-sa-color-picker" data-default-color="' . esc_attr(get_option($args['id'], '#2271b1')) . '" />';
+		}
+
+		/**
+		 * Render the custom HTML email template textarea with placeholder guide.
+		 */
+		public function render_email_template_field($args): void
+		{
+			$value = get_option($args['id'], '');
+			echo '<textarea id="' . esc_attr($args['id']) . '" name="' . esc_attr($args['id']) . '" class="large-text giga-sa-email-template-editor" rows="10" placeholder="' . esc_attr__('Leave blank to use the built-in template. Paste custom HTML here.', 'giga-stock-alerts') . '">' . esc_textarea($value) . '</textarea>';
+			echo '<p class="description">' . esc_html__('Available placeholders:', 'giga-stock-alerts') . ' <code>{customer_name}</code>, <code>{product_name}</code>, <code>{product_price}</code>, <code>{product_url}</code>, <code>{product_image}</code>, <code>{store_name}</code>, <code>{unsubscribe_url}</code></p>';
+		}
+
+		/**
+		 * Render the test email send button.
+		 */
+		public function render_test_email_field($args): void
+		{
+			$admin_email = get_option('admin_email');
+			echo '<button type="button" id="giga-sa-send-test-email" class="button" data-nonce="' . esc_attr(wp_create_nonce('giga_sa_test_email')) . '" data-email="' . esc_attr($admin_email) . '">';
+			esc_html_e('Send Test Email to Admin', 'giga-stock-alerts');
+			echo '</button>';
+			echo '<span id="giga-sa-test-email-result" style="margin-left:10px;"></span>';
+			echo '<p class="description">' . sprintf(
+				/* translators: %s: admin email address */
+				esc_html__('Sends a sample restock email to %s using the current template settings.', 'giga-stock-alerts'),
+				'<strong>' . esc_html($admin_email) . '</strong>'
+			) . '</p>';
 		}
 
 		// -----------------------------------------------------------------------
@@ -555,7 +600,6 @@ if (!class_exists('Giga_SA_Admin')) {
 
 				<form id="subs-filter" method="get">
 					<input type="hidden" name="page" value="giga-stock-alerts-subscribers" />
-					<?php wp_nonce_field('giga_sa_subscribers_filter', 'giga_sa_filter_nonce'); ?>
 					<?php
 					$table->views();
 					$table->search_box(__('Search Emails', 'giga-stock-alerts'), 'search_id');
@@ -776,62 +820,119 @@ if (!class_exists('Giga_SA_Admin')) {
 		}
 
 		// -----------------------------------------------------------------------
+		// AJAX: Send Test Email
+		// -----------------------------------------------------------------------
+
+		/**
+		 * Send a test restock email to the admin.
+		 */
+		public function ajax_send_test_email(): void
+		{
+			if ( ! current_user_can( 'manage_woocommerce' ) ) {
+				wp_send_json_error( [ 'message' => __( 'Unauthorized.', 'giga-stock-alerts' ) ] );
+			}
+
+			if ( ! wp_verify_nonce(
+				sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ),
+				'giga_sa_test_email'
+			) ) {
+				wp_send_json_error( [ 'message' => __( 'Security check failed.', 'giga-stock-alerts' ) ] );
+			}
+
+			$to = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : get_option( 'admin_email' );
+
+			$sent = Giga_SA_Email::send_test_email( $to );
+
+			if ( $sent ) {
+				wp_send_json_success( [
+					/* translators: %s: email address */
+					'message' => sprintf( __( 'Test email sent to %s!', 'giga-stock-alerts' ), $to ),
+				] );
+			} else {
+				wp_send_json_error( [ 'message' => __( 'Failed to send test email. Check your server mail settings.', 'giga-stock-alerts' ) ] );
+			}
+		}
+
+		// -----------------------------------------------------------------------
 		// Export CSV
 		// -----------------------------------------------------------------------
 
 		public function export_csv(): void
 		{
-			if (!current_user_can('manage_woocommerce')) {
-				wp_die(esc_html__('Unauthorized', 'giga-stock-alerts'));
+			if ( ! current_user_can( 'manage_woocommerce' ) ) {
+				wp_die( esc_html__( 'Unauthorized', 'giga-stock-alerts' ) );
 			}
 
-			check_admin_referer('giga_sa_export');
+			check_admin_referer( 'giga_sa_export' );
 
 			global $wpdb;
-			$table_name = esc_sql($wpdb->prefix . 'giga_stock_alerts');
+			$table_name = esc_sql( $wpdb->prefix . 'giga_stock_alerts' );
 
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$subscribers = $wpdb->get_results($wpdb->prepare("SELECT * FROM `{$table_name}` ORDER BY subscribed_at DESC"), ARRAY_A);
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+			$subscribers = $wpdb->get_results( "SELECT * FROM `{$table_name}` ORDER BY subscribed_at DESC", ARRAY_A );
+			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
 
-			header('Content-Type: text/csv; charset=utf-8');
-			header('Content-Disposition: attachment; filename=giga-stock-alerts-' . gmdate('Y-m-d') . '.csv');
-
-			$output = fopen('php://output', 'w');
-			if (!$output) {
-				return;
+			// Discard any buffered output WordPress or other plugins may have generated
+			// so we start with a clean slate before sending file headers.
+			while ( ob_get_level() > 0 ) {
+				ob_end_clean();
 			}
 
-			fputcsv($output, [
-				__('ID', 'giga-stock-alerts'),
-				__('Product ID', 'giga-stock-alerts'),
-				__('Variation ID', 'giga-stock-alerts'),
-				__('Email', 'giga-stock-alerts'),
-				__('Name', 'giga-stock-alerts'),
-				__('Status', 'giga-stock-alerts'),
-				__('IP Address', 'giga-stock-alerts'),
-				__('Subscribed At', 'giga-stock-alerts'),
-				__('Notified At', 'giga-stock-alerts')
-			]);
+			$filename = 'giga-stock-alerts-' . gmdate( 'Y-m-d' ) . '.csv';
 
-			if (!empty($subscribers)) {
-				foreach ($subscribers as $row) {
-					fputcsv($output, [
+			// Send download headers.
+			header( 'Content-Type: text/csv; charset=utf-8' );
+			header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
+			header( 'Pragma: no-cache' );
+			header( 'Expires: 0' );
+			header( 'Cache-Control: must-revalidate, post-check=0, pre-check=0' );
+
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
+			$output = fopen( 'php://output', 'w' );
+			if ( ! $output ) {
+				exit;
+			}
+
+			// UTF-8 BOM so Excel opens the file correctly without garbling characters.
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite
+			fwrite( $output, "\xEF\xBB\xBF" );
+
+			// Header row.
+			fputcsv( $output, [
+				__( 'ID',            'giga-stock-alerts' ),
+				__( 'Product ID',    'giga-stock-alerts' ),
+				__( 'Variation ID',  'giga-stock-alerts' ),
+				__( 'Email',         'giga-stock-alerts' ),
+				__( 'Name',          'giga-stock-alerts' ),
+				__( 'Status',        'giga-stock-alerts' ),
+				__( 'Alert Type',    'giga-stock-alerts' ),
+				__( 'Price Watched', 'giga-stock-alerts' ),
+				__( 'IP Address',    'giga-stock-alerts' ),
+				__( 'Subscribed At', 'giga-stock-alerts' ),
+				__( 'Notified At',   'giga-stock-alerts' ),
+			] );
+
+			// Data rows.
+			if ( ! empty( $subscribers ) ) {
+				foreach ( $subscribers as $row ) {
+					fputcsv( $output, [
 						$row['id'],
 						$row['product_id'],
 						$row['variation_id'],
 						$row['email'],
 						$row['customer_name'],
 						$row['status'],
+						$row['alert_type']    ?? 'restock',
+						$row['price_watched'] ?? '',
 						$row['ip_address'],
 						$row['subscribed_at'],
-						$row['notified_at'],
-					]);
+						$row['notified_at']   ?? '',
+					] );
 				}
 			}
 
-			if ( is_resource( $output ) ) {
-				fclose( $output ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
-			}
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+			fclose( $output );
 			exit;
 		}
 
